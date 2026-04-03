@@ -1,10 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { GameVersion, LauncherSettings, Mod } from "./Types";
-
-// --- Versions ---
-export async function getVersions(): Promise<GameVersion[]> {
-  return await invoke("get_versions");
-}
+import { LauncherSettings, Mod } from "./Types";
 
 // --- Mods ---
 export async function getInstalledMods(versionId: string): Promise<Mod[]> {
@@ -75,5 +70,6 @@ export async function updateSettings(
 export async function launchGame(
   versionId: string,
 ): Promise<{ success: boolean; message: string }> {
+  await invoke("plugin:lighty-launcher|launch", { versionId });
   return await invoke("launch_game", { versionId });
 }

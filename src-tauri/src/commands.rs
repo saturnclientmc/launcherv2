@@ -1,12 +1,6 @@
-use tauri::{AppHandle, Emitter, State};
+use tauri::State;
 
-use crate::{GameVersion, LauncherSettings, Mod, SharedState};
-
-#[tauri::command]
-pub fn get_versions(state: State<SharedState>) -> Vec<GameVersion> {
-    let state = state.lock().unwrap();
-    state.versions.clone()
-}
+use crate::{LauncherSettings, Mod, SharedState};
 
 #[tauri::command]
 pub fn get_installed_mods(state: State<SharedState>, version_id: String) -> Vec<Mod> {
@@ -46,29 +40,4 @@ pub fn get_settings(state: State<SharedState>) -> LauncherSettings {
 pub fn update_settings(state: State<SharedState>, new_settings: LauncherSettings) {
     let mut state = state.lock().unwrap();
     state.settings = new_settings;
-}
-
-#[tauri::command]
-pub fn launch_game(app: AppHandle, version_id: String) -> Result<(), String> {
-    std::thread::spawn(move || {
-        app.emit("is-launching", "true").unwrap();
-        app.emit("launch-status", "Preparing...").unwrap();
-
-        std::thread::sleep(std::time::Duration::from_millis(500));
-        app.emit("launch-status", "Verifying assets...").unwrap();
-
-        std::thread::sleep(std::time::Duration::from_millis(700));
-        app.emit("launch-status", "Applying Saturn optimizations...")
-            .unwrap();
-
-        std::thread::sleep(std::time::Duration::from_millis(700));
-        app.emit("launch-status", "Starting game...").unwrap();
-
-        std::thread::sleep(std::time::Duration::from_millis(1000));
-        app.emit("launch-status", "Game launched!").unwrap();
-
-        app.emit("is-launching", "false").unwrap();
-    });
-
-    Ok(())
 }
