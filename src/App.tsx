@@ -8,7 +8,7 @@ import {
   User,
   LogOut,
 } from "lucide-react";
-import { getVersions } from "./services/LauncherService";
+import { getVersions } from "./services/SaturnApi";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import Logo from "@/assets/logo.png";

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Play, Loader2 } from "lucide-react";
-import { launchGame } from "../services/LauncherService";
+// import { launchGame } from "../services/SaturnApi";
 import Bg from "@/assets/bg.png";
 import { listen } from "@tauri-apps/api/event";
 import { GameVersion } from "@/services/Types";
+import { launch } from "@/services/LauncherApi";
 
 interface PlaySectionProps {
   version: GameVersion;
@@ -43,7 +44,7 @@ const PlaySection: React.FC<PlaySectionProps> = ({ version }) => {
           <div className="absolute -inset-1 bg-linear-to-r from-blue-600 to-cyan-500 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
 
           <button
-            onClick={() => launchGame(version.id)}
+            onClick={() => launch()}
             disabled={isLaunching}
             className="relative btn-primary px-16 py-4 text-xl flex items-center gap-3 min-w-60 justify-center"
           >

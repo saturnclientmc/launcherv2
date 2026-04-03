@@ -1,4 +1,5 @@
 pub mod commands;
+pub mod launcher;
 
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;

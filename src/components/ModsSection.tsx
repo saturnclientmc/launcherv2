@@ -14,7 +14,7 @@ import {
   getVersions,
   toggleMod,
   installMod,
-} from "../services/LauncherService";
+} from "../services/SaturnApi";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { motion, AnimatePresence } from "framer-motion";

@@ -75,11 +75,3 @@ export async function updateSettings(
 ): Promise<void> {
   await invoke("update_settings", { newSettings });
 }
-
-// --- Launch ---
-export async function launchGame(
-  versionId: string,
-): Promise<{ success: boolean; message: string }> {
-  await invoke("plugin:lighty-launcher|launch", { versionId });
-  return await invoke("launch_game", { versionId });
-}
