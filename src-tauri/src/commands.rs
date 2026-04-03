@@ -28,28 +28,6 @@ pub fn toggle_mod(state: State<SharedState>, mod_id: String) {
 }
 
 #[tauri::command]
-pub fn discover_mods(query: String) -> Vec<Mod> {
-    let all = vec![Mod {
-        id: "modmenu".into(),
-        name: "Mod Menu".into(),
-        version: "7.2.2".into(),
-        author: "TerraformersMC".into(),
-        description: "Adds a mod menu.".into(),
-        enabled: false,
-        icon: None,
-        supported_versions: vec!["1.20.1".into(), "1.20.4".into(), "1.21".into()],
-    }];
-
-    if query.is_empty() {
-        return all;
-    }
-
-    all.into_iter()
-        .filter(|m| m.name.to_lowercase().contains(&query.to_lowercase()))
-        .collect()
-}
-
-#[tauri::command]
 pub fn install_mod(state: State<SharedState>, mut mod_item: Mod) {
     let mut state = state.lock().unwrap();
 
