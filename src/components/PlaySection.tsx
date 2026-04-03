@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Play, Loader2 } from "lucide-react";
 import { launchGame, type GameVersion } from "../services/LauncherService";
+import Bg from "@/assets/bg.png";
 
 interface PlaySectionProps {
   version: GameVersion;
@@ -35,7 +36,7 @@ const PlaySection: React.FC<PlaySectionProps> = ({ version }) => {
     <div className="h-full relative">
       {/* Background Image */}
       <img
-        src="/bg.png"
+        src={Bg}
         alt="Background"
         className="w-full h-full object-cover rounded-2xl brightness-50"
       />

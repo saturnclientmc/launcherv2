@@ -11,6 +11,7 @@ import {
 import { getVersions, type GameVersion } from "./services/LauncherService";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import Logo from "@/assets/logo.png";
 
 // Utility for merging tailwind classes
 function cn(...inputs: ClassValue[]) {
@@ -71,7 +72,7 @@ const App: React.FC = () => {
       {/* Sidebar */}
       <aside className="w-16 border-r border-saturn-border flex flex-col items-center py-6 gap-6 bg-saturn-panel/50">
         <div>
-          <img src="/logo.png" alt="Saturn Logo" className="w-10 h-10" />
+          <img src={Logo} alt="Saturn Logo" className="w-10 h-10" />
         </div>
 
         <nav className="flex flex-col gap-4 h-full">
