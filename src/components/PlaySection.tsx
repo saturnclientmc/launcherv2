@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Play, Loader2 } from "lucide-react";
 import { launchGame, type GameVersion } from "../services/LauncherService";
 import Bg from "@/assets/bg.png";
+import { listen } from "@tauri-apps/api/event";
 
 interface PlaySectionProps {
   version: GameVersion;
@@ -11,26 +12,20 @@ const PlaySection: React.FC<PlaySectionProps> = ({ version }) => {
   const [isLaunching, setIsLaunching] = useState(false);
   const [launchStatus, setLaunchStatus] = useState("");
 
-  const handleLaunch = async () => {
-    setIsLaunching(true);
-    setLaunchStatus("Preparing...");
+  useEffect(() => {
+    const unlistenLaunchStatus = listen<string>("launch-status", (event) => {
+      setLaunchStatus(event.payload);
+    });
 
-    // Simulate launch steps
-    setTimeout(() => setLaunchStatus("Verifying assets..."), 500);
-    setTimeout(() => setLaunchStatus("Applying Saturn optimizations..."), 1200);
+    const unlistenIsLaunching = listen<string>("is-launching", (event) => {
+      setIsLaunching(event.payload === "true");
+    });
 
-    const result = await launchGame(version.id);
-
-    if (result.success) {
-      setLaunchStatus("Game running");
-      // In a real app, we might minimize or close the launcher here
-    }
-
-    setTimeout(() => {
-      setIsLaunching(false);
-      setLaunchStatus("");
-    }, 3000);
-  };
+    return () => {
+      unlistenLaunchStatus.then((f) => f());
+      unlistenIsLaunching.then((f) => f());
+    };
+  }, []);
 
   return (
     <div className="h-full relative">
@@ -47,7 +42,7 @@ const PlaySection: React.FC<PlaySectionProps> = ({ version }) => {
           <div className="absolute -inset-1 bg-linear-to-r from-blue-600 to-cyan-500 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
 
           <button
-            onClick={handleLaunch}
+            onClick={() => launchGame(version.id)}
             disabled={isLaunching}
             className="relative btn-primary px-16 py-4 text-xl flex items-center gap-3 min-w-60 justify-center"
           >

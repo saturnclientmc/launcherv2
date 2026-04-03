@@ -1,4 +1,4 @@
-use tauri::State;
+use tauri::{AppHandle, Emitter, State};
 
 use crate::{GameVersion, LauncherSettings, Mod, SharedState};
 
@@ -49,11 +49,26 @@ pub fn update_settings(state: State<SharedState>, new_settings: LauncherSettings
 }
 
 #[tauri::command]
-pub fn launch_game(version_id: String) -> Result<String, String> {
-    println!("Launching Saturn Client with version {}", version_id);
+pub fn launch_game(app: AppHandle, version_id: String) -> Result<(), String> {
+    std::thread::spawn(move || {
+        app.emit("is-launching", "true").unwrap();
+        app.emit("launch-status", "Preparing...").unwrap();
 
-    // Replace this with real launcher logic
-    std::thread::sleep(std::time::Duration::from_secs(2));
+        std::thread::sleep(std::time::Duration::from_millis(500));
+        app.emit("launch-status", "Verifying assets...").unwrap();
 
-    Ok("Game launched successfully!".into())
+        std::thread::sleep(std::time::Duration::from_millis(700));
+        app.emit("launch-status", "Applying Saturn optimizations...")
+            .unwrap();
+
+        std::thread::sleep(std::time::Duration::from_millis(700));
+        app.emit("launch-status", "Starting game...").unwrap();
+
+        std::thread::sleep(std::time::Duration::from_millis(1000));
+        app.emit("launch-status", "Game launched!").unwrap();
+
+        app.emit("is-launching", "false").unwrap();
+    });
+
+    Ok(())
 }
