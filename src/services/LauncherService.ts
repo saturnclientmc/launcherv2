@@ -1,5 +1,15 @@
 import { invoke } from "@tauri-apps/api/core";
-import { LauncherSettings, Mod } from "./Types";
+import { GameVersion, LauncherSettings, Mod } from "./Types";
+
+// --- Versions ---
+export async function getVersions(): Promise<GameVersion[]> {
+  return [
+    {
+      id: "1.21.4",
+      name: "Fabric 1.21.4",
+    },
+  ];
+}
 
 // --- Mods ---
 export async function getInstalledMods(versionId: string): Promise<Mod[]> {

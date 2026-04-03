@@ -12,8 +12,6 @@ export interface Mod {
 export interface GameVersion {
   id: string;
   name: string;
-  release_date: string;
-  type: "release" | "snapshot";
 }
 
 export interface LauncherSettings {
