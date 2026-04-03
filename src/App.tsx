@@ -46,13 +46,11 @@ const App: React.FC = () => {
     <div className="flex h-screen w-screen bg-saturn-bg text-saturn-text-primary overflow-hidden font-sans">
       {/* Sidebar */}
       <aside className="w-16 border-r border-saturn-border flex flex-col items-center py-6 gap-6 bg-saturn-panel/50">
-        <div className="mb-4">
-          <div className="w-10 h-10 bg-saturn-accent rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.4)]">
-            <span className="font-bold text-white text-xl">S</span>
-          </div>
+        <div>
+          <img src="/logo.png" alt="Saturn Logo" className="w-10 h-10" />
         </div>
 
-        <nav className="flex flex-col gap-4">
+        <nav className="flex flex-col gap-4 h-full">
           <button
             onClick={() => setActiveSection("play")}
             className={cn("sidebar-icon", activeSection === "play" && "active")}
@@ -97,20 +95,25 @@ const App: React.FC = () => {
         <header className="h-14 border-b border-saturn-border flex items-center justify-between px-6 bg-saturn-panel/30 backdrop-blur-md z-100 py-10">
           {/* Version Selector */}
           <div className="relative">
-            <button
-              onClick={() => setIsVersionDropdownOpen(!isVersionDropdownOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-white/5 transition-colors text-sm font-medium border border-transparent hover:border-saturn-border"
-            >
-              <span className="text-saturn-text-secondary">Version:</span>
-              <span>{selectedVersion?.name || "Loading..."}</span>
-              <ChevronDown
-                size={14}
-                className={cn(
-                  "transition-transform",
-                  isVersionDropdownOpen && "rotate-180",
-                )}
-              />
-            </button>
+            <div className="relative group overflow-visible inline-block">
+              {/* Glow */}
+              <div className="absolute -inset-1 bg-linear-to-r from-blue-600 to-cyan-500 rounded-md blur opacity-25 group-hover:opacity-50 transition duration-500 pointer-events-none" />
+
+              <button
+                onClick={() => setIsVersionDropdownOpen(!isVersionDropdownOpen)}
+                className="relative z-10 flex items-center gap-2 px-3 py-1.5 rounded-md btn-primary text-sm font-medium"
+              >
+                <span>{selectedVersion?.name || "Loading..."}</span>
+
+                <ChevronDown
+                  size={14}
+                  className={cn(
+                    "transition-transform",
+                    isVersionDropdownOpen && "rotate-180",
+                  )}
+                />
+              </button>
+            </div>
 
             {isVersionDropdownOpen && (
               <div className="absolute top-full left-0 mt-2 w-48 bg-saturn-panel border border-saturn-border rounded-lg shadow-2xl z-50 py-1 overflow-hidden">
