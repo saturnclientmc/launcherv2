@@ -8,7 +8,7 @@ import {
   User,
   LogOut,
 } from "lucide-react";
-import { getVersions, type GameVersion } from "./services/LauncherService";
+import { getVersions } from "./services/LauncherService";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import Logo from "@/assets/logo.png";
@@ -22,6 +22,7 @@ function cn(...inputs: ClassValue[]) {
 import PlaySection from "./components/PlaySection";
 import ModsSection from "./components/ModsSection";
 import SettingsSection from "./components/SettingsSection";
+import { GameVersion } from "./services/Types";
 
 type Section = "play" | "mods" | "settings";
 
