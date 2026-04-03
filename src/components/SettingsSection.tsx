@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Cpu, MemoryStick, Save, RefreshCcw, Info, AlertTriangle } from 'lucide-react'
-import { launcherService, type LauncherSettings } from '../services/LauncherService'
+import { getSettings, updateSettings, type LauncherSettings } from '../services/LauncherService'
 import { motion } from 'framer-motion'
 
 const SettingsSection: React.FC = () => {
@@ -10,7 +10,7 @@ const SettingsSection: React.FC = () => {
 
   useEffect(() => {
     const loadSettings = async () => {
-      const s = await launcherService.getSettings()
+      const s = await getSettings()
       setSettings(s)
     }
     loadSettings()
@@ -21,7 +21,7 @@ const SettingsSection: React.FC = () => {
     setIsSaving(true)
     setSaveStatus('Saving...')
     
-    await launcherService.updateSettings(settings)
+    await updateSettings(settings)
     
     setTimeout(() => {
       setIsSaving(false)

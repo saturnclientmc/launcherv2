@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Play, Loader2 } from "lucide-react";
-import { launcherService, type GameVersion } from "../services/LauncherService";
+import { launchGame, type GameVersion } from "../services/LauncherService";
 
 interface PlaySectionProps {
   version: GameVersion;
@@ -18,7 +18,7 @@ const PlaySection: React.FC<PlaySectionProps> = ({ version }) => {
     setTimeout(() => setLaunchStatus("Verifying assets..."), 500);
     setTimeout(() => setLaunchStatus("Applying Saturn optimizations..."), 1200);
 
-    const result = await launcherService.launchGame(version.id);
+    const result = await launchGame(version.id);
 
     if (result.success) {
       setLaunchStatus("Game running");

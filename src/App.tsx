@@ -8,7 +8,7 @@ import {
   User,
   LogOut,
 } from "lucide-react";
-import { launcherService, type GameVersion } from "./services/LauncherService";
+import { getVersions, type GameVersion } from "./services/LauncherService";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -38,7 +38,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const fetchVersions = async () => {
-      const v = await launcherService.getVersions();
+      const v = await getVersions();
       setVersions(v);
       if (v.length > 0) setSelectedVersion(v[0]);
     };
