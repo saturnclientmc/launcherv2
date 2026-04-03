@@ -115,12 +115,22 @@ const SettingsSection: React.FC = () => {
               className="w-full h-2 bg-saturn-border rounded-lg appearance-none cursor-pointer accent-saturn-accent"
             />
 
-            <div className="flex justify-between text-[10px] text-saturn-text-secondary font-bold uppercase tracking-widest">
-              <span>1 GB</span>
-              <span>4 GB</span>
-              <span>8 GB</span>
-              <span>12 GB</span>
-              <span>16 GB</span>
+            <div className="relative w-full mt-2 h-6">
+              {[1024, 4096, 8192, 12288, 16384].map((value) => {
+                const percent =
+                  (((value - 1024) / (16384 - 1024)) * 100 - 50) * 0.97 +
+                  50;
+
+                return (
+                  <span
+                    key={value}
+                    className="absolute text-[10px] text-saturn-text-secondary font-bold uppercase tracking-widest -translate-x-1/2 whitespace-nowrap"
+                    style={{ left: `${percent}%` }}
+                  >
+                    {value / 1024} GB
+                  </span>
+                );
+              })}
             </div>
 
             <div className="p-3 bg-blue-500/5 border border-blue-500/10 rounded-lg flex gap-3">
