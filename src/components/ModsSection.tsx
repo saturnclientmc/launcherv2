@@ -246,7 +246,7 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
               <div className="p-6 space-y-3 max-h-64 overflow-y-auto">
                 {allVersions.map((v) => {
                   const isSupported =
-                    selectedModForInstall.supportedVersions.includes(v.id);
+                    selectedModForInstall.supported_versions.includes(v.id);
                   const isSelected = selectedVersionsForInstall.includes(v.id);
 
                   return (

@@ -1,28 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-
-// --- Types ---
-export interface Mod {
-  id: string;
-  name: string;
-  version: string;
-  author: string;
-  description: string;
-  enabled: boolean;
-  icon?: string;
-  supportedVersions: string[];
-}
-
-export interface GameVersion {
-  id: string;
-  name: string;
-  releaseDate: string;
-  type: "release" | "snapshot";
-}
-
-export interface LauncherSettings {
-  jvmArguments: string;
-  maxMemory: number;
-}
+import { GameVersion, LauncherSettings, Mod } from "./Types";
 
 // --- Versions ---
 export async function getVersions(): Promise<GameVersion[]> {
@@ -47,7 +24,7 @@ export async function discoverMods(query: string): Promise<Mod[]> {
       author: "TerraformersMC",
       description: "Adds a mod menu to view the list of installed mods.",
       enabled: false,
-      supportedVersions: ["1.20.1", "1.20.4", "1.21"],
+      supported_versions: ["1.20.1", "1.20.4", "1.21"],
     },
     {
       id: "starlight",
@@ -56,7 +33,7 @@ export async function discoverMods(query: string): Promise<Mod[]> {
       author: "Spottedleaf",
       description: "Rewrites the light engine to fix performance issues.",
       enabled: false,
-      supportedVersions: ["1.20.1"],
+      supported_versions: ["1.20.1"],
     },
     {
       id: "ferritecore",
@@ -65,7 +42,7 @@ export async function discoverMods(query: string): Promise<Mod[]> {
       author: "malte0811",
       description: "Memory usage optimizations.",
       enabled: false,
-      supportedVersions: ["1.20.1", "1.20.4", "1.21"],
+      supported_versions: ["1.20.1", "1.20.4", "1.21"],
     },
   ];
 
