@@ -33,6 +33,9 @@ const App: React.FC = () => {
   const [isVersionDropdownOpen, setIsVersionDropdownOpen] = useState(false);
   const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
 
+  const versionRef = React.useRef<HTMLDivElement | null>(null);
+  const accountRef = React.useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
     const fetchVersions = async () => {
       const v = await launcherService.getVersions();
@@ -40,6 +43,27 @@ const App: React.FC = () => {
       if (v.length > 0) setSelectedVersion(v[0]);
     };
     fetchVersions();
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Node;
+
+      // Close version dropdown if clicked outside
+      if (versionRef.current && !versionRef.current.contains(target)) {
+        setIsVersionDropdownOpen(false);
+      }
+
+      // Close account dropdown if clicked outside
+      if (accountRef.current && !accountRef.current.contains(target)) {
+        setIsAccountDropdownOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   return (
@@ -94,13 +118,16 @@ const App: React.FC = () => {
         {/* Top Bar */}
         <header className="h-14 border-b border-saturn-border flex items-center justify-between px-6 bg-saturn-panel/30 backdrop-blur-md z-100 py-10">
           {/* Version Selector */}
-          <div className="relative">
+          <div ref={versionRef} className="relative">
             <div className="relative group overflow-visible inline-block">
               {/* Glow */}
               <div className="absolute -inset-1 bg-linear-to-r from-blue-600 to-cyan-500 rounded-md blur opacity-25 group-hover:opacity-50 transition duration-500 pointer-events-none" />
 
               <button
-                onClick={() => setIsVersionDropdownOpen(!isVersionDropdownOpen)}
+                onClick={() => {
+                  setIsVersionDropdownOpen((prev) => !prev);
+                  setIsAccountDropdownOpen(false);
+                }}
                 className="relative z-10 flex items-center gap-2 px-3 py-1.5 rounded-md btn-primary text-sm font-medium"
               >
                 <span>{selectedVersion?.name || "Loading..."}</span>
@@ -115,27 +142,32 @@ const App: React.FC = () => {
               </button>
             </div>
 
-            {isVersionDropdownOpen && (
-              <div className="absolute top-full left-0 mt-2 w-48 bg-saturn-panel border border-saturn-border rounded-lg shadow-2xl z-50 py-1 overflow-hidden">
-                {versions.map((v) => (
-                  <button
-                    key={v.id}
-                    onClick={() => {
-                      setSelectedVersion(v);
-                      setIsVersionDropdownOpen(false);
-                    }}
-                    className="w-full flex items-center justify-between px-4 py-2 text-sm hover:bg-saturn-accent/10 hover:text-saturn-accent transition-colors"
-                  >
-                    <span>{v.name}</span>
-                    {selectedVersion?.id === v.id && <Check size={14} />}
-                  </button>
-                ))}
-              </div>
-            )}
+            <div
+              className={cn(
+                "absolute top-full left-0 mt-2 w-48 bg-saturn-panel border border-saturn-border rounded-lg shadow-2xl z-50 py-1 overflow-hidden transition-all duration-200 origin-top",
+                isVersionDropdownOpen
+                  ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
+                  : "opacity-0 scale-95 -translate-y-2 pointer-events-none",
+              )}
+            >
+              {versions.map((v) => (
+                <button
+                  key={v.id}
+                  onClick={() => {
+                    setSelectedVersion(v);
+                    setIsVersionDropdownOpen(false);
+                  }}
+                  className="w-full flex items-center justify-between px-4 py-2 text-sm hover:bg-saturn-accent/10 hover:text-saturn-accent transition-colors"
+                >
+                  <span>{v.name}</span>
+                  {selectedVersion?.id === v.id && <Check size={14} />}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Account Selector */}
-          <div className="relative group overflow-visible">
+          <div ref={accountRef} className="relative group overflow-visible">
             {/* Glow */}
             <div className="absolute -inset-1 bg-linear-to-r from-blue-600 to-cyan-500 rounded-lg blur opacity-25 group-hover:opacity-50 transition pointer-events-none duration-700" />
 
@@ -159,24 +191,29 @@ const App: React.FC = () => {
               </div>
             </button>
 
-            {isAccountDropdownOpen && (
-              <div className="absolute top-full right-0 mt-2 w-48 bg-saturn-panel border border-saturn-border rounded-lg shadow-2xl z-50 py-1 overflow-hidden">
-                <div className="px-4 py-3 border-b border-saturn-border">
-                  <p className="text-sm font-bold">SaturnDev</p>
-                  <p className="text-xs text-saturn-text-secondary truncate">
-                    dev@saturnclient.com
-                  </p>
-                </div>
-                <button className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-white/5 transition-colors">
-                  <User size={14} />
-                  <span>Switch Account</span>
-                </button>
-                <button className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-red-500/10 text-red-400 transition-colors">
-                  <LogOut size={14} />
-                  <span>Logout</span>
-                </button>
+            <div
+              className={cn(
+                "absolute top-full right-0 mt-2 w-48 bg-saturn-panel border border-saturn-border rounded-lg shadow-2xl z-50 py-1 overflow-hidden transition-all duration-200 origin-top",
+                isAccountDropdownOpen
+                  ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
+                  : "opacity-0 scale-95 -translate-y-2 pointer-events-none",
+              )}
+            >
+              <div className="px-4 py-3 border-b border-saturn-border">
+                <p className="text-sm font-bold">SaturnDev</p>
+                <p className="text-xs text-saturn-text-secondary truncate">
+                  dev@saturnclient.com
+                </p>
               </div>
-            )}
+              <button className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-white/5 transition-colors">
+                <User size={14} />
+                <span>Switch Account</span>
+              </button>
+              <button className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-red-500/10 text-red-400 transition-colors">
+                <LogOut size={14} />
+                <span>Logout</span>
+              </button>
+            </div>
           </div>
         </header>
 
