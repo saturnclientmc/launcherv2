@@ -9,8 +9,6 @@ import {
   X,
 } from "lucide-react";
 import {
-  type Mod,
-  type GameVersion,
   getInstalledMods,
   discoverMods,
   getVersions,
@@ -20,6 +18,7 @@ import {
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { motion, AnimatePresence } from "framer-motion";
+import { GameVersion, Mod } from "@/services/Types";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Play, Loader2 } from "lucide-react";
-import { launchGame, type GameVersion } from "../services/LauncherService";
+import { launchGame } from "../services/LauncherService";
 import Bg from "@/assets/bg.png";
 import { listen } from "@tauri-apps/api/event";
+import { GameVersion } from "@/services/Types";
 
 interface PlaySectionProps {
   version: GameVersion;
