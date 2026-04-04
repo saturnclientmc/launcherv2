@@ -48,7 +48,10 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
         setMods(m);
       } else {
         const m = await discoverMods(searchQuery);
-        setMods(m);
+        if (activeTab === "discover") {
+          // Fix: If discover mods takes too long and the user switches tabs it glitches
+          setMods(m);
+        }
       }
     };
     loadMods();
