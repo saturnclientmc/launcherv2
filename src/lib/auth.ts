@@ -1,5 +1,15 @@
 import { invoke } from "@tauri-apps/api/core";
 
+export interface MinecraftAccount {
+  xuid: string;
+  exp: number;
+  uuid: string;
+  username: string;
+  access_token: string;
+  refresh_token: string;
+  client_id: string;
+}
+
 /**
  * Create Microsoft login URL
  */
@@ -10,21 +20,21 @@ export async function authCreateLink(): Promise<string> {
 /**
  * Exchange auth code for account
  */
-export async function authLogin(code: string) {
+export async function authLogin(code: string): Promise<MinecraftAccount> {
   return await invoke("auth_login", { code });
 }
 
 /**
  * Refresh account by UUID
  */
-export async function authRefresh(uuid: string) {
+export async function authRefresh(uuid: string): Promise<MinecraftAccount> {
   return await invoke("auth_refresh", { uuid });
 }
 
 /**
  * Get all stored accounts
  */
-export async function authList() {
+export async function authList(): Promise<MinecraftAccount[]> {
   return await invoke("auth_list");
 }
 
@@ -45,6 +55,6 @@ export async function authValidate(uuid: string): Promise<boolean> {
 /**
  * Get valid account (auto-refresh if needed)
  */
-export async function authGetValid(uuid: string) {
+export async function authGetValid(uuid: string): Promise<MinecraftAccount> {
   return await invoke("auth_get_valid", { uuid });
 }

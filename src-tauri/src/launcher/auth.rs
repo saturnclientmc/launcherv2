@@ -4,6 +4,7 @@ use reqwest::Client;
 use tauri::command;
 
 use lyceris::auth::microsoft::{authenticate, create_link, refresh, validate, MinecraftAccount};
+use tauri_plugin_opener::open_url;
 
 use crate::launcher::LAUNCHER_DIR;
 
@@ -36,7 +37,11 @@ fn save_accounts(accounts: &[MinecraftAccount]) -> Result<(), String> {
 
 #[command]
 pub fn auth_create_link() -> Result<String, String> {
-    create_link().map_err(|e| e.to_string())
+    let link = create_link().map_err(|e| e.to_string())?;
+
+    open_url(&link, None::<String>).map_err(|e| e.to_string())?;
+
+    Ok(link)
 }
 
 #[command]
