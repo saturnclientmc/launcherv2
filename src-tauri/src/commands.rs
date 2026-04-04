@@ -153,13 +153,17 @@ pub async fn enable_mod(version: String, file_name: String) -> Result<(), String
 }
 
 #[tauri::command]
-pub async fn install_mod(mod_meta: Mod, versions: Vec<String>) -> Result<(), String> {
+pub async fn install_mod(mut mod_meta: Mod, versions: Vec<String>) -> Result<(), String> {
     let client = reqwest::Client::new();
 
     println!("Installing {} for {:?}", mod_meta.name, versions);
 
+    let cache_dir = LAUNCHER_DIR.data_dir().join("cache");
+    fs::create_dir_all(&cache_dir)
+        .await
+        .map_err(|e| e.to_string())?;
+
     for mc_version in versions {
-        // 1. Fetch versions from Modrinth
         let url = format!(
             "https://api.modrinth.com/v2/project/{}/version",
             mod_meta.id
@@ -169,7 +173,6 @@ pub async fn install_mod(mod_meta: Mod, versions: Vec<String>) -> Result<(), Str
 
         let versions_list: Vec<ModrinthVersion> = res.json().await.map_err(|e| e.to_string())?;
 
-        // 2. Filter compatible versions
         let mut compatible: Vec<&ModrinthVersion> = versions_list
             .iter()
             .filter(|v| v.game_versions.contains(&mc_version))
@@ -180,12 +183,10 @@ pub async fn install_mod(mod_meta: Mod, versions: Vec<String>) -> Result<(), Str
             continue;
         }
 
-        // 3. Sort by version_number (latest first)
         compatible.sort_by(|a, b| b.version_number.cmp(&a.version_number));
 
         let selected = compatible[0];
 
-        // 4. Get primary file
         let file = selected
             .files
             .iter()
@@ -193,7 +194,6 @@ pub async fn install_mod(mod_meta: Mod, versions: Vec<String>) -> Result<(), Str
             .or_else(|| selected.files.first())
             .ok_or("No files found for version")?;
 
-        // 5. Download file
         let bytes = client
             .get(&file.url)
             .send()
@@ -203,19 +203,35 @@ pub async fn install_mod(mod_meta: Mod, versions: Vec<String>) -> Result<(), Str
             .await
             .map_err(|e| e.to_string())?;
 
-        // 6. Create directory
         let dir: PathBuf = LAUNCHER_DIR.data_dir().join(&mc_version).join("mods");
 
         fs::create_dir_all(&dir).await.map_err(|e| e.to_string())?;
 
         let file_path = dir.join(&file.filename);
 
-        // 7. Save file
+        // 1. Save JAR
         fs::write(&file_path, &bytes)
             .await
             .map_err(|e| e.to_string())?;
 
-        println!("Installed {} for {}", mod_meta.name, mc_version);
+        // 2. Prepare cache metadata
+        mod_meta.id = file.filename.clone(); // ✅ ID is filename
+        mod_meta.version = selected.version_number.clone();
+        mod_meta.enabled = true;
+
+        let cache_path = cache_dir.join(format!("{}.json", file.filename));
+
+        // 3. Save metadata JSON
+        let json = serde_json::to_string_pretty(&mod_meta).map_err(|e| e.to_string())?;
+
+        fs::write(&cache_path, json)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        println!(
+            "Installed {} for {} (cached as {})",
+            mod_meta.name, mc_version, file.filename
+        );
     }
 
     Ok(())
