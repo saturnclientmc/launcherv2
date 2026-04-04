@@ -64,7 +64,7 @@ export default function App() {
           accountRef={accountRef}
         />
 
-        <div className="flex-1 p-8">
+        <div className="flex-1 p-8 overflow-y-scroll">
           {active === "play" && selectedVersion && (
             <PlaySection version={selectedVersion} />
           )}
