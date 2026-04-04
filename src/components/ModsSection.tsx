@@ -54,7 +54,10 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
         }
       }
     };
-    loadMods();
+
+    const id = setTimeout(loadMods, 800);
+
+    return () => clearTimeout(id);
   }, [activeTab, version.id, searchQuery]);
 
   const handleToggleMod = async (modId: string) => {
