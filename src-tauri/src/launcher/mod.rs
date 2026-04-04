@@ -13,6 +13,7 @@ use lyceris::{
     },
 };
 use once_cell::sync::Lazy;
+use tauri::Emitter as _;
 
 use crate::GameVersion;
 
@@ -22,7 +23,16 @@ pub static LAUNCHER_DIR: Lazy<ProjectDirs> = Lazy::new(|| {
 });
 
 #[tauri::command]
-pub async fn launch_game(version: GameVersion, account: MinecraftAccount) -> Result<(), String> {
+pub async fn launch_game(
+    app: tauri::AppHandle,
+    version: GameVersion,
+    account: MinecraftAccount,
+) -> Result<(), String> {
+    emit_progress(&app, 0.0);
+
+    app.emit("is-launching", "true").unwrap();
+    app.emit("launch-status", "Preparing").unwrap();
+
     // Emitter uses `EventEmitter` inside of it
     // and it uses tokio::Mutex for locking.
     // That causes emitter methods to be async.
@@ -44,19 +54,18 @@ pub async fn launch_game(version: GameVersion, account: MinecraftAccount) -> Res
     // Java, libraries and assets are downloaded in parallel and
     // this event is triggered for each file.
     emitter
-        .on(
-            Event::MultipleDownloadProgress,
-            |(_, current, total, _): (String, u64, u64, String)| {
+        .on(Event::MultipleDownloadProgress, {
+            let app = app.clone();
+            move |(_, current, total, _): (String, u64, u64, String)| {
+                emit_progress(&app, current as f32 / total as f32);
                 println!("Downloading {}/{}", current, total);
-            },
-        )
+            }
+        })
         .await;
 
-    // Console event send when a line is printed to the console.
-    // It uses a seperated tokio thread to handle this operation.
     emitter
         .on(Event::Console, |line: String| {
-            println!("Line: {}", line);
+            println!("{}", line);
         })
         .await;
 
@@ -78,6 +87,8 @@ pub async fn launch_game(version: GameVersion, account: MinecraftAccount) -> Res
 
     println!("Starting installation");
 
+    app.emit("launch-status", "Installing").unwrap();
+
     // Install method also checks for broken files
     // and downloads them again if they are broken.
     install::install(&config, Some(&emitter))
@@ -86,7 +97,10 @@ pub async fn launch_game(version: GameVersion, account: MinecraftAccount) -> Res
 
     println!("Finished installing");
 
-    // This method never downloads any file and just runs the game.
+    emit_progress(&app, 1.0);
+
+    app.emit("launch-status", "Launching").unwrap();
+
     launch(&config, Some(&emitter))
         .await
         .map_err(|e| e.to_string())?
@@ -94,5 +108,14 @@ pub async fn launch_game(version: GameVersion, account: MinecraftAccount) -> Res
         .await
         .map_err(|e| e.to_string())?;
 
+    app.emit("is-launching", "false").unwrap();
+    app.emit("launch-status", "").unwrap();
+    emit_progress(&app, 0.0);
+
     Ok(())
+}
+
+fn emit_progress(app: &tauri::AppHandle, progress: f32) {
+    let percent = (progress * 100.0).round() as u32;
+    let _ = app.emit("launch-progress", percent);
 }
