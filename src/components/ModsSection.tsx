@@ -11,8 +11,9 @@ import {
 import {
   getInstalledMods,
   discoverMods,
-  toggleMod,
+  enableMod,
   installMod,
+  disableMod,
 } from "@/lib/saturn";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -60,8 +61,9 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
     return () => clearTimeout(id);
   }, [activeTab, version.id, searchQuery]);
 
-  const handleToggleMod = async (modId: string) => {
-    await toggleMod(modId);
+  const handleToggleMod = async (modId: string, enable: boolean) => {
+    if (enable) await enableMod(version.id, modId);
+    else await disableMod(version.id, modId);
     const m = await getInstalledMods(version.id);
     setMods(m);
   };
@@ -171,7 +173,7 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
                 {activeTab === "installed" ? (
                   <>
                     <button
-                      onClick={() => handleToggleMod(mod.id)}
+                      onClick={() => handleToggleMod(mod.id, !mod.enabled)}
                       className={cn(
                         "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
                         mod.enabled

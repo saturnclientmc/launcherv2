@@ -1,17 +1,225 @@
+use std::path::PathBuf;
+
+use serde::Deserialize;
 use tauri::State;
+use tokio::fs;
 
-use crate::{save_state, LauncherSettings, Mod, SharedState};
+use crate::{launcher::LAUNCHER_DIR, save_state, LauncherSettings, Mod, SharedState};
 
-#[tauri::command]
-pub fn get_installed_mods(state: State<SharedState>, version_id: String) -> Vec<Mod> {
-    Vec::new()
+#[derive(Deserialize)]
+struct ModrinthVersion {
+    version_number: String,
+    game_versions: Vec<String>,
+    files: Vec<ModrinthFile>,
+}
+
+#[derive(Deserialize)]
+struct ModrinthFile {
+    url: String,
+    filename: String,
+    primary: bool,
 }
 
 #[tauri::command]
-pub fn toggle_mod(state: State<SharedState>, mod_id: String) {}
+pub async fn get_installed_mods(version_id: String) -> Result<Vec<Mod>, String> {
+    let mut mods = Vec::new();
+
+    let base_dir = LAUNCHER_DIR.data_dir().join(&version_id).join("mods");
+
+    let enabled_dir = base_dir.clone();
+    let disabled_dir = base_dir.join("disabled_mods");
+
+    let cache_dir = LAUNCHER_DIR.data_dir().join("cache");
+
+    // process a directory async
+    async fn process_dir(dir: PathBuf, enabled: bool, cache_dir: PathBuf) -> Vec<Mod> {
+        let mut mods = Vec::new();
+
+        if fs::metadata(&dir).await.is_err() {
+            return mods;
+        }
+
+        let mut entries = match fs::read_dir(&dir).await {
+            Ok(e) => e,
+            Err(_) => return mods,
+        };
+
+        while let Ok(Some(entry)) = entries.next_entry().await {
+            let path = entry.path();
+
+            // only .jar files
+            if path.extension().and_then(|s| s.to_str()) != Some("jar") {
+                continue;
+            }
+
+            let file_name = match path.file_name().and_then(|s| s.to_str()) {
+                Some(name) => name.to_string(),
+                None => continue,
+            };
+
+            let cache_path = cache_dir.join(format!("{}.json", file_name));
+
+            let mod_item = if fs::metadata(&cache_path).await.is_ok() {
+                match fs::read_to_string(&cache_path).await {
+                    Ok(content) => match serde_json::from_str::<Mod>(&content) {
+                        Ok(mut m) => {
+                            m.enabled = enabled;
+                            m
+                        }
+                        Err(_) => fallback_mod(&file_name, enabled),
+                    },
+                    Err(_) => fallback_mod(&file_name, enabled),
+                }
+            } else {
+                fallback_mod(&file_name, enabled)
+            };
+
+            mods.push(mod_item);
+        }
+
+        mods
+    }
+
+    // run both dirs (sequential, but async-safe)
+    let mut enabled_mods = process_dir(enabled_dir, true, cache_dir.clone()).await;
+    let mut disabled_mods = process_dir(disabled_dir, false, cache_dir.clone()).await;
+
+    mods.append(&mut enabled_mods);
+    mods.append(&mut disabled_mods);
+
+    Ok(mods)
+}
+
+// fallback
+fn fallback_mod(file_name: &str, enabled: bool) -> Mod {
+    Mod {
+        id: file_name.to_string(),
+        name: file_name.to_string(),
+        version: String::new(),
+        author: String::new(),
+        description: String::new(),
+        enabled,
+        icon: None,
+        supported_versions: vec![],
+    }
+}
 
 #[tauri::command]
-pub fn install_mod(state: State<SharedState>, mut mod_item: Mod) {}
+pub async fn disable_mod(version: String, file_name: String) -> Result<(), String> {
+    // mods folder
+    let mods_dir: PathBuf = LAUNCHER_DIR.data_dir().join(&version).join("mods");
+
+    // disabled_mods folder
+    let disabled_dir = mods_dir.join("disabled_mods");
+
+    // create disabled_mods if it doesn't exist
+    fs::create_dir_all(&disabled_dir)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let source = mods_dir.join(&file_name);
+    let destination = disabled_dir.join(&file_name);
+
+    if !source.exists() {
+        return Err(format!("Mod file not found: {}", file_name));
+    }
+
+    // move file
+    fs::rename(&source, &destination)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn enable_mod(version: String, file_name: String) -> Result<(), String> {
+    let mods_dir = LAUNCHER_DIR.data_dir().join(&version).join("mods");
+
+    let disabled_dir = mods_dir.join("disabled_mods");
+
+    let source = disabled_dir.join(&file_name);
+    let destination = mods_dir.join(&file_name);
+
+    if !source.exists() {
+        return Err(format!("Disabled mod not found: {}", file_name));
+    }
+
+    fs::rename(&source, &destination)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn install_mod(mod_meta: Mod, versions: Vec<String>) -> Result<(), String> {
+    let client = reqwest::Client::new();
+
+    println!("Installing {} for {:?}", mod_meta.name, versions);
+
+    for mc_version in versions {
+        // 1. Fetch versions from Modrinth
+        let url = format!(
+            "https://api.modrinth.com/v2/project/{}/version",
+            mod_meta.id
+        );
+
+        let res = client.get(&url).send().await.map_err(|e| e.to_string())?;
+
+        let versions_list: Vec<ModrinthVersion> = res.json().await.map_err(|e| e.to_string())?;
+
+        // 2. Filter compatible versions
+        let mut compatible: Vec<&ModrinthVersion> = versions_list
+            .iter()
+            .filter(|v| v.game_versions.contains(&mc_version))
+            .collect();
+
+        if compatible.is_empty() {
+            println!("No compatible version found for {}", mc_version);
+            continue;
+        }
+
+        // 3. Sort by version_number (latest first)
+        compatible.sort_by(|a, b| b.version_number.cmp(&a.version_number));
+
+        let selected = compatible[0];
+
+        // 4. Get primary file
+        let file = selected
+            .files
+            .iter()
+            .find(|f| f.primary)
+            .or_else(|| selected.files.first())
+            .ok_or("No files found for version")?;
+
+        // 5. Download file
+        let bytes = client
+            .get(&file.url)
+            .send()
+            .await
+            .map_err(|e| e.to_string())?
+            .bytes()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        // 6. Create directory
+        let dir: PathBuf = LAUNCHER_DIR.data_dir().join(&mc_version).join("mods");
+
+        fs::create_dir_all(&dir).await.map_err(|e| e.to_string())?;
+
+        let file_path = dir.join(&file.filename);
+
+        // 7. Save file
+        fs::write(&file_path, &bytes)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        println!("Installed {} for {}", mod_meta.name, mc_version);
+    }
+
+    Ok(())
+}
 
 #[tauri::command]
 pub fn get_settings(state: State<SharedState>) -> LauncherSettings {

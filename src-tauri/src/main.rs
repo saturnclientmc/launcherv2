@@ -11,7 +11,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             // Saturn Launcher Commands
             saturn_launcher_lib::commands::get_installed_mods,
-            saturn_launcher_lib::commands::toggle_mod,
+            saturn_launcher_lib::commands::enable_mod,
+            saturn_launcher_lib::commands::disable_mod,
             saturn_launcher_lib::commands::install_mod,
             saturn_launcher_lib::commands::get_settings,
             saturn_launcher_lib::commands::update_settings,

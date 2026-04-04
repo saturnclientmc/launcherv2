@@ -6,8 +6,15 @@ export async function getInstalledMods(versionId: string): Promise<Mod[]> {
   return await invoke("get_installed_mods", { versionId });
 }
 
-export async function toggleMod(modId: string): Promise<void> {
-  await invoke("toggle_mod", { modId });
+export async function enableMod(version: string, modId: string): Promise<void> {
+  await invoke("enable_mod", { version, fileName: modId });
+}
+
+export async function disableMod(
+  version: string,
+  modId: string,
+): Promise<void> {
+  await invoke("disable_mod", { version, fileName: modId });
 }
 
 export async function discoverMods(query: string): Promise<Mod[]> {
@@ -43,11 +50,8 @@ export async function discoverMods(query: string): Promise<Mod[]> {
   );
 }
 
-export async function installMod(
-  mod: Mod,
-  versionsList: string[],
-): Promise<void> {
-  await invoke("install_mod", { modItem: mod });
+export async function installMod(mod: Mod, versions: string[]): Promise<void> {
+  await invoke("install_mod", { modMeta: mod, versions });
 }
 
 // --- Settings ---
