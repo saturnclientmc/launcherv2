@@ -1,3 +1,4 @@
+use futures::stream::FuturesUnordered;
 /// This module handles the installation of Minecraft, including downloading
 /// necessary files and managing the Java runtime environment.
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
@@ -128,12 +129,31 @@ pub async fn install<T: Loader>(
 
     if !to_be_extracted.is_empty() {
         create_dir_all(&natives_path)?;
+
+        let tasks = FuturesUnordered::new();
+
         for extract in to_be_extracted {
-            if let Some(path) = extract.path {
-                let path = PathBuf::from(path);
-                download(&extract.url, &path, emitter, config.client.as_ref()).await?;
-                extract_file(&path, &natives_path)?;
-            }
+            let emitter = emitter.cloned();
+            let client = config.client.clone();
+            let natives_path = natives_path.clone();
+
+            tasks.push(tauri::async_runtime::spawn(async move {
+                if let Some(path) = extract.path {
+                    let path = PathBuf::from(path);
+
+                    download(&extract.url, &path, emitter.as_ref(), client.as_ref()).await?;
+                    extract_file(&path, &natives_path)?;
+
+                    Ok::<_, Error>(())
+                } else {
+                    Ok(())
+                }
+            }));
+        }
+
+        for task in tasks {
+            task.await
+                .map_err(|e| lyceris::Error::Fail(e.to_string()))??;
         }
     }
 
@@ -516,9 +536,7 @@ async fn download_necessary(
             if file.url.is_empty() {
                 return None;
             }
-            if !file.path.exists()
-                || (!file.sha1.is_empty() && calculate_sha1(&file.path).ok()? != file.sha1)
-            {
+            if !file.path.exists() {
                 return Some((file.url.clone(), file.path.clone(), file.r#type.clone()));
             }
             None
