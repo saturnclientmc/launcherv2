@@ -13,12 +13,12 @@ import {
   discoverMods,
   toggleMod,
   installMod,
-  versions,
 } from "@/lib/saturn";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { motion, AnimatePresence } from "framer-motion";
 import { GameVersion, Mod } from "@/lib/types";
+import { versions } from "@/lib/launcher";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

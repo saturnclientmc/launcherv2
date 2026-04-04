@@ -4,7 +4,7 @@ import TopBar from "./components/layout/TopBar";
 import PlaySection from "./components/PlaySection";
 import ModsSection from "./components/ModsSection";
 import SettingsSection from "./components/SettingsSection";
-import { versions } from "./lib/saturn";
+import { versions } from "./lib/launcher";
 import { GameVersion } from "./lib/types";
 import { MinecraftAccount } from "./lib/auth";
 
