@@ -1,10 +1,9 @@
 use std::{fs, path::PathBuf};
 
 use reqwest::Client;
-use tauri::command;
+use tauri::{command, Url};
 
 use lyceris::auth::microsoft::{authenticate, create_link, refresh, validate, MinecraftAccount};
-use tauri_plugin_opener::open_url;
 
 use crate::launcher::LAUNCHER_DIR;
 
@@ -36,10 +35,20 @@ fn save_accounts(accounts: &[MinecraftAccount]) -> Result<(), String> {
 }
 
 #[command]
-pub fn auth_create_link() -> Result<String, String> {
+pub fn auth_create_link(app: tauri::AppHandle) -> Result<String, String> {
     let link = create_link().map_err(|e| e.to_string())?;
 
-    open_url(&link, None::<String>).map_err(|e| e.to_string())?;
+    // Create auth window
+    tauri::WebviewWindowBuilder::new(
+        &app,
+        "auth",
+        tauri::WebviewUrl::External(link.parse::<Url>().map_err(|e| e.to_string())?),
+    )
+    .title("Microsoft Login")
+    .inner_size(500.0, 700.0)
+    .resizable(false)
+    .build()
+    .map_err(|e| e.to_string())?;
 
     Ok(link)
 }
