@@ -1,5 +1,6 @@
 pub mod downloader;
 pub mod install;
+pub mod auth;
 
 use directories::ProjectDirs;
 use lyceris::minecraft::{
