@@ -1,4 +1,5 @@
 pub mod commands;
+pub mod launcher;
 
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
@@ -20,8 +21,7 @@ pub struct Mod {
 pub struct GameVersion {
     pub id: String,
     pub name: String,
-    pub release_date: String,
-    pub r#type: String, // "release" | "snapshot"
+    pub loader_version: String,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -32,7 +32,6 @@ pub struct LauncherSettings {
 
 // --- App State ---
 pub struct AppState {
-    pub versions: Vec<GameVersion>,
     pub mods: Vec<Mod>,
     pub settings: LauncherSettings,
 }
@@ -40,26 +39,6 @@ pub struct AppState {
 impl Default for AppState {
     fn default() -> Self {
         Self {
-            versions: vec![
-                GameVersion {
-                    id: "1.20.1".into(),
-                    name: "Fabric 1.20.1".into(),
-                    release_date: "2023-06-07".into(),
-                    r#type: "release".into(),
-                },
-                GameVersion {
-                    id: "1.20.4".into(),
-                    name: "Fabric 1.20.4".into(),
-                    release_date: "2023-12-07".into(),
-                    r#type: "release".into(),
-                },
-                GameVersion {
-                    id: "1.21".into(),
-                    name: "Fabric 1.21".into(),
-                    release_date: "2024-06-13".into(),
-                    r#type: "release".into(),
-                },
-            ],
             mods: vec![
                 Mod {
                     id: "sodium".into(),

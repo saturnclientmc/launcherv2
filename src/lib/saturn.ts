@@ -1,10 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { GameVersion, LauncherSettings, Mod } from "./Types";
-
-// --- Versions ---
-export async function getVersions(): Promise<GameVersion[]> {
-  return await invoke("get_versions");
-}
+import { LauncherSettings, Mod } from "./types";
 
 // --- Mods ---
 export async function getInstalledMods(versionId: string): Promise<Mod[]> {
@@ -69,11 +64,4 @@ export async function updateSettings(
   newSettings: Partial<LauncherSettings>,
 ): Promise<void> {
   await invoke("update_settings", { newSettings });
-}
-
-// --- Launch ---
-export async function launchGame(
-  versionId: string,
-): Promise<{ success: boolean; message: string }> {
-  return await invoke("launch_game", { versionId });
 }

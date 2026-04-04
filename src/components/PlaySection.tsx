@@ -1,15 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { Play, Loader2 } from "lucide-react";
-import { launchGame } from "../services/LauncherService";
+// import { launchGame } from "../services/SaturnApi";
 import Bg from "@/assets/bg.png";
 import { listen } from "@tauri-apps/api/event";
-import { GameVersion } from "@/services/Types";
+import { GameVersion } from "@/lib/types";
+import { launch } from "@/lib/launcher";
+import { MinecraftAccount } from "@/lib/auth";
+import { cn } from "@/lib/utils";
 
 interface PlaySectionProps {
-  version: GameVersion;
+  version: GameVersion | null;
+  account: MinecraftAccount | null;
 }
 
-const PlaySection: React.FC<PlaySectionProps> = ({ version }) => {
+const PlaySection: React.FC<PlaySectionProps> = ({ version, account }) => {
   const [isLaunching, setIsLaunching] = useState(false);
   const [launchStatus, setLaunchStatus] = useState("");
 
@@ -43,9 +47,13 @@ const PlaySection: React.FC<PlaySectionProps> = ({ version }) => {
           <div className="absolute -inset-1 bg-linear-to-r from-blue-600 to-cyan-500 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
 
           <button
-            onClick={() => launchGame(version.id)}
-            disabled={isLaunching}
-            className="relative btn-primary px-16 py-4 text-xl flex items-center gap-3 min-w-60 justify-center"
+            onClick={() => version && account && launch(version, account)}
+            disabled={isLaunching || !version || !account}
+            className={cn(
+              "relative btn-primary px-16 py-4 text-xl flex items-center gap-3 min-w-60 justify-center",
+              (isLaunching || !version || !account) &&
+                "cursor-not-allowed opacity-70",
+            )}
           >
             {isLaunching ? (
               <>
@@ -55,7 +63,7 @@ const PlaySection: React.FC<PlaySectionProps> = ({ version }) => {
             ) : (
               <>
                 <Play size={24} fill="currentColor" />
-                <span>LAUNCH {version.id}</span>
+                <span>LAUNCH {version?.id}</span>
               </>
             )}
           </button>

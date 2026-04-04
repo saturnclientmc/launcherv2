@@ -7,9 +7,9 @@ import {
   Info,
   AlertTriangle,
 } from "lucide-react";
-import { getSettings, updateSettings } from "../services/LauncherService";
+import { getSettings, updateSettings } from "../lib/saturn";
 import { motion } from "framer-motion";
-import { LauncherSettings } from "@/services/Types";
+import { LauncherSettings } from "@/lib/types";
 
 const SettingsSection: React.FC = () => {
   const [settings, setSettings] = useState<LauncherSettings | null>(null);
@@ -118,8 +118,7 @@ const SettingsSection: React.FC = () => {
             <div className="relative w-full mt-2 h-6">
               {[1024, 4096, 8192, 12288, 16384].map((value) => {
                 const percent =
-                  (((value - 1024) / (16384 - 1024)) * 100 - 50) * 0.97 +
-                  50;
+                  (((value - 1024) / (16384 - 1024)) * 100 - 50) * 0.97 + 50;
 
                 return (
                   <span
