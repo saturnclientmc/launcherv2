@@ -42,24 +42,28 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
     string[]
   >([]);
 
-  useEffect(() => {
-    const loadMods = async () => {
-      if (activeTab === "installed") {
-        const m = await getInstalledMods(version.id);
+  const loadMods = async () => {
+    if (activeTab === "installed") {
+      const m = await getInstalledMods(version.id);
+      setMods(m);
+    } else {
+      const m = await discoverMods(searchQuery);
+      if (activeTab === "discover") {
+        // Fix: If discover mods takes too long and the user switches tabs it glitches
         setMods(m);
-      } else {
-        const m = await discoverMods(searchQuery);
-        if (activeTab === "discover") {
-          // Fix: If discover mods takes too long and the user switches tabs it glitches
-          setMods(m);
-        }
       }
-    };
+    }
+  };
 
+  useEffect(() => {
     const id = setTimeout(loadMods, 800);
-
     return () => clearTimeout(id);
-  }, [activeTab, version.id, searchQuery]);
+  }, [version.id, searchQuery]);
+
+  useEffect(() => {
+    setMods([]);
+    loadMods();
+  }, [activeTab]);
 
   const handleToggleMod = async (modId: string, enable: boolean) => {
     if (enable) await enableMod(version.id, modId);
@@ -152,7 +156,11 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
             >
               <div className="w-12 h-12 rounded-lg bg-zinc-800 border border-saturn-border flex items-center justify-center shrink-0">
                 {mod.icon ? (
-                  <img src={mod.icon} alt="Mod Icon" className="w-full h-full rounded-lg" />
+                  <img
+                    src={mod.icon}
+                    alt="Mod Icon"
+                    className="w-full h-full rounded-lg"
+                  />
                 ) : (
                   <Package size={24} className="text-saturn-text-secondary" />
                 )}
