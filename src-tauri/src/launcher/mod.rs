@@ -13,9 +13,9 @@ use lyceris::{
     },
 };
 use once_cell::sync::Lazy;
-use tauri::Emitter as _;
+use tauri::{Emitter as _, State};
 
-use crate::GameVersion;
+use crate::{GameVersion, SharedState};
 
 pub static LAUNCHER_DIR: Lazy<ProjectDirs> = Lazy::new(|| {
     ProjectDirs::from("org", "SaturnLauncher", "SaturnLauncher")
@@ -25,6 +25,7 @@ pub static LAUNCHER_DIR: Lazy<ProjectDirs> = Lazy::new(|| {
 #[tauri::command]
 pub async fn launch_game(
     app: tauri::AppHandle,
+    state: State<'_, SharedState>,
     version: GameVersion,
     account: MinecraftAccount,
 ) -> Result<(), String> {
@@ -83,6 +84,9 @@ pub async fn launch_game(
         },
     )
     .loader(Fabric(version.loader_version).into())
+    .memory(lyceris::minecraft::config::Memory::Megabyte(
+        state.lock().unwrap().settings.max_memory as u64,
+    ))
     .build();
 
     println!("Starting installation");

@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Cpu,
-  MemoryStick,
-  Save,
-  RefreshCcw,
-  Info,
-  AlertTriangle,
-} from "lucide-react";
+import { MemoryStick, Save, RefreshCcw, Info } from "lucide-react";
 import { getSettings, updateSettings } from "../lib/saturn";
 import { motion } from "framer-motion";
 import { LauncherSettings } from "@/lib/types";
@@ -41,8 +34,6 @@ const SettingsSection: React.FC = () => {
   const handleReset = async () => {
     // In a real app, this would reset to defaults in the service
     const defaultSettings: LauncherSettings = {
-      jvm_arguments:
-        "-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200",
       max_memory: 4096,
     };
     setSettings(defaultSettings);
@@ -138,48 +129,6 @@ const SettingsSection: React.FC = () => {
                 Allocating too much memory can cause system instability, while
                 too little can lead to performance issues or crashes. 4GB - 8GB
                 is recommended for most users.
-              </p>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* JVM Arguments */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="panel p-6 space-y-6"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-saturn-accent/10 flex items-center justify-center text-saturn-accent">
-              <Cpu size={18} />
-            </div>
-            <h2 className="text-lg font-bold">Custom JVM Arguments</h2>
-          </div>
-
-          <div className="space-y-4">
-            <p className="text-xs text-saturn-text-secondary leading-relaxed">
-              Advanced flags for the Java Virtual Machine. Saturn Client
-              includes optimized defaults, but you can override them here.
-            </p>
-
-            <textarea
-              value={settings.jvm_arguments}
-              onChange={(e) =>
-                setSettings({ ...settings, jvm_arguments: e.target.value })
-              }
-              className="w-full h-32 bg-saturn-bg border border-saturn-border rounded-lg p-4 text-sm font-mono text-saturn-text-secondary focus:outline-none focus:border-saturn-accent/50 focus:ring-1 focus:ring-saturn-accent/50 transition-all resize-none"
-              placeholder="-XX:+UseG1GC..."
-            />
-
-            <div className="p-3 bg-yellow-500/5 border border-yellow-500/10 rounded-lg flex gap-3">
-              <AlertTriangle
-                size={16}
-                className="text-yellow-500 shrink-0 mt-0.5"
-              />
-              <p className="text-xs text-yellow-500/80 leading-relaxed">
-                Incorrect JVM arguments can prevent the game from starting. Only
-                modify if you know what you're doing.
               </p>
             </div>
           </div>
