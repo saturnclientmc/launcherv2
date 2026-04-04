@@ -10,6 +10,7 @@ use crate::{launcher::LAUNCHER_DIR, save_state, LauncherSettings, Mod, SharedSta
 struct ModrinthVersion {
     version_number: String,
     game_versions: Vec<String>,
+    loaders: Vec<String>,
     files: Vec<ModrinthFile>,
 }
 
@@ -175,7 +176,9 @@ pub async fn install_mod(mut mod_meta: Mod, versions: Vec<String>) -> Result<(),
 
         let mut compatible: Vec<&ModrinthVersion> = versions_list
             .iter()
-            .filter(|v| v.game_versions.contains(&mc_version))
+            .filter(|v| {
+                v.game_versions.contains(&mc_version) && v.loaders.iter().any(|l| l == "fabric")
+            })
             .collect();
 
         if compatible.is_empty() {
