@@ -2,6 +2,35 @@ import { User, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Props } from "./props";
 
+function UserComponent({
+  username,
+  uuid,
+  onClick,
+}: {
+  username: string;
+  uuid: string;
+  onClick?: () => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex gap-2.5 border-b border-saturn-border p-3 pb-2 cursor-default",
+        onClick && "cursor-pointer hover:bg-white/5 transition-colors",
+      )}
+      onClick={onClick}
+    >
+      <img
+        src={"https://render.crafty.gg/2d/head/" + uuid}
+        className="w-10 h-10 object-cover shrink-0"
+      />
+      <div className="min-w-0 select-none">
+        <p className="text-sm font-bold truncate">{username}</p>
+        <p className="text-xs text-saturn-text-secondary truncate">{uuid}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function AccountDropdown({
   isAccountDropdownOpen,
   setIsAccountDropdownOpen,
@@ -17,7 +46,7 @@ export default function AccountDropdown({
       >
         <div className="absolute -top-2 left-4 group-hover:scale-110 transition-transform duration-700 w-12 overflow-hidden z-20">
           <img
-            src="https://render.crafty.gg/3d/bust/Kr4ight"
+            src="https://render.crafty.gg/3d/bust/swight"
             className="w-full h-full object-cover"
           />
         </div>
@@ -38,16 +67,29 @@ export default function AccountDropdown({
             : "opacity-0 scale-95 -translate-y-2 pointer-events-none",
         )}
       >
-        <div className="px-4 py-3 border-b border-saturn-border">
-          <p className="text-sm font-bold">SaturnDev</p>
-          <p className="text-xs text-saturn-text-secondary truncate">
-            dev@saturnclient.com
-          </p>
+        {/* Current account */}
+        <div>
+          <UserComponent
+            username="SaturnDev"
+            uuid="123e4567-e89b-12d3-a456-426614174000"
+          />
         </div>
+
+        {/* Accounts (current account should be filtered) */}
+
+        <div>
+          <UserComponent
+            username="SaturnDev2"
+            uuid="123e4567-e89b-12d3-a456-426614174000"
+            onClick={() => {}}
+          />
+        </div>
+
+        {/* Account Options */}
 
         <button className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-white/5 transition-colors">
           <User size={14} />
-          <span>Switch Account</span>
+          <span>Add Account</span>
         </button>
 
         <button className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-red-500/10 text-red-400 transition-colors">
