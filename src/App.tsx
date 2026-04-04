@@ -7,6 +7,7 @@ import SettingsSection from "./components/SettingsSection";
 import { versions } from "./lib/launcher";
 import { GameVersion } from "./lib/types";
 import { MinecraftAccount } from "./lib/auth";
+import { getVersion, updateVersion } from "./lib/saturn";
 
 type Section = "play" | "mods" | "settings";
 
@@ -50,8 +51,15 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    setSelectedVersion(versions[0]);
+    (async () => {
+      const version = await getVersion();
+      setSelectedVersion(versions.find((v) => v.id == version) || null);
+    })();
   }, []);
+
+  useEffect(() => {
+    if (selectedVersion?.id) updateVersion(selectedVersion?.id);
+  }, [selectedVersion]);
 
   return (
     <div className="flex h-screen">

@@ -2,7 +2,11 @@ pub mod commands;
 pub mod launcher;
 
 use serde::{Deserialize, Serialize};
-use std::sync::Mutex;
+use std::{fs, path::PathBuf, sync::Mutex};
+
+use crate::launcher::LAUNCHER_DIR;
+
+type SharedState = Mutex<AppState>;
 
 // --- Types ---
 #[derive(Clone, Serialize, Deserialize)]
@@ -31,43 +35,74 @@ pub struct LauncherSettings {
 }
 
 // --- App State ---
+#[derive(Clone, Serialize, Deserialize)]
 pub struct AppState {
-    pub mods: Vec<Mod>,
     pub settings: LauncherSettings,
+    pub version: String,
 }
 
 impl Default for AppState {
     fn default() -> Self {
         Self {
-            mods: vec![
-                Mod {
-                    id: "sodium".into(),
-                    name: "Sodium".into(),
-                    version: "0.5.8".into(),
-                    author: "jellysquid3".into(),
-                    description: "Modern rendering engine for Minecraft.".into(),
-                    enabled: true,
-                    icon: None,
-                    supported_versions: vec!["1.20.1".into(), "1.20.4".into(), "1.21".into()],
-                },
-                Mod {
-                    id: "iris".into(),
-                    name: "Iris".into(),
-                    version: "1.7.0".into(),
-                    author: "coderbot".into(),
-                    description: "A modern shaders mod for Minecraft.".into(),
-                    enabled: true,
-                    icon: None,
-                    supported_versions: vec!["1.20.1".into(), "1.20.4".into(), "1.21".into()],
-                },
-            ],
             settings: LauncherSettings {
                 jvm_arguments: "-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200"
                     .into(),
                 max_memory: 4096,
             },
+            version: String::from("1.21.6"),
         }
     }
 }
 
-type SharedState = Mutex<AppState>;
+// Helper to get config path
+fn config_path() -> PathBuf {
+    LAUNCHER_DIR.config_dir().join("launcher.json")
+}
+
+// --- Load ---
+pub fn load_state() -> SharedState {
+    let path = config_path();
+
+    if path.exists() {
+        match fs::read_to_string(&path) {
+            Ok(content) => match serde_json::from_str::<AppState>(&content) {
+                Ok(state) => return Mutex::new(state),
+                Err(err) => {
+                    eprintln!("Failed to parse config, using default: {err}");
+                }
+            },
+            Err(err) => {
+                eprintln!("Failed to read config, using default: {err}");
+            }
+        }
+    }
+
+    // If missing or failed → create default
+    let default = Mutex::new(AppState::default());
+    save_state(&default);
+
+    default
+}
+
+// --- Save ---
+pub fn save_state(state: &SharedState) {
+    let path = config_path();
+
+    if let Some(parent) = path.parent() {
+        if let Err(err) = fs::create_dir_all(parent) {
+            eprintln!("Failed to create config directory: {err}");
+            return;
+        }
+    }
+
+    match serde_json::to_string_pretty(&*state.lock().unwrap()) {
+        Ok(json) => {
+            if let Err(err) = fs::write(path, json) {
+                eprintln!("Failed to write config: {err}");
+            }
+        }
+        Err(err) => {
+            eprintln!("Failed to serialize config: {err}");
+        }
+    }
+}
