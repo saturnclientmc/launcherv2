@@ -1,30 +1,25 @@
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import Sidebar from "./components/layout/Sidebar";
 import TopBar from "./components/layout/TopBar";
 import PlaySection from "./components/PlaySection";
 import ModsSection from "./components/ModsSection";
 import SettingsSection from "./components/SettingsSection";
-import { getVersions } from "./lib/saturn";
+import { versions } from "./lib/saturn";
 import { GameVersion } from "./lib/types";
 
 type Section = "play" | "mods" | "settings";
 
 export default function App() {
   const [active, setActive] = useState<Section>("play");
-  const [versions, setVersions] = useState<GameVersion[]>([]);
   const [selectedVersion, setSelectedVersion] = useState<GameVersion | null>(
     null,
   );
 
-  const [versionOpen, setVersionOpen] = useState(false);
-  const [accountOpen, setAccountOpen] = useState(false);
+  const [isVersionDropdownOpen, setIsVersionDropdownOpen] = useState(false);
+  const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
 
-  useEffect(() => {
-    getVersions().then((v) => {
-      setVersions(v);
-      if (v.length) setSelectedVersion(v[0]);
-    });
-  }, []);
+  const versionRef = useRef<HTMLDivElement | null>(null);
+  const accountRef = useRef<HTMLDivElement | null>(null);
 
   return (
     <div className="flex h-screen">
@@ -35,10 +30,12 @@ export default function App() {
           versions={versions}
           selectedVersion={selectedVersion}
           setSelectedVersion={setSelectedVersion}
-          versionOpen={versionOpen}
-          setVersionOpen={setVersionOpen}
-          accountOpen={accountOpen}
-          setAccountOpen={setAccountOpen}
+          isVersionDropdownOpen={isVersionDropdownOpen}
+          setIsVersionDropdownOpen={setIsVersionDropdownOpen}
+          isAccountDropdownOpen={isAccountDropdownOpen}
+          setIsAccountDropdownOpen={setIsAccountDropdownOpen}
+          versionRef={versionRef}
+          accountRef={accountRef}
         />
 
         <div className="flex-1 p-8">

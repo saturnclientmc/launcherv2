@@ -1,34 +1,13 @@
 import VersionDropdown from "./VersionDropdown";
 import AccountDropdown from "./AccountDropdown";
-import { GameVersion } from "@/lib/types";
-
-interface Props {
-  versions: GameVersion[];
-  selectedVersion: GameVersion | null;
-  setSelectedVersion: (v: GameVersion) => void;
-
-  versionOpen: boolean;
-  setVersionOpen: (v: boolean) => void;
-
-  accountOpen: boolean;
-  setAccountOpen: (v: boolean) => void;
-}
+import { Props } from "./props";
 
 export default function TopBar(props: Props) {
   return (
-    <header className="h-14 flex justify-between items-center px-6 border-b">
-      <VersionDropdown
-        versions={props.versions}
-        selected={props.selectedVersion}
-        onSelect={props.setSelectedVersion}
-        open={props.versionOpen}
-        setOpen={props.setVersionOpen}
-      />
+    <header className="h-14 border-b border-saturn-border flex items-center justify-between px-6 bg-saturn-panel/30 backdrop-blur-md z-100 py-10">
+      <VersionDropdown {...props} />
 
-      <AccountDropdown
-        open={props.accountOpen}
-        setOpen={props.setAccountOpen}
-      />
+      <AccountDropdown {...props} />
     </header>
   );
 }

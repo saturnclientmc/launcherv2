@@ -1,52 +1,60 @@
 import { ChevronDown, Check } from "lucide-react";
 import { GameVersion } from "@/lib/types";
-import { twMerge } from "tailwind-merge";
-
-interface Props {
-  versions: GameVersion[];
-  selected: GameVersion | null;
-  onSelect: (v: GameVersion) => void;
-  open: boolean;
-  setOpen: (v: boolean) => void;
-}
+import { cn } from "@/lib/utils";
+import { Props } from "./props";
 
 export default function VersionDropdown({
   versions,
-  selected,
-  onSelect,
-  open,
-  setOpen,
+  selectedVersion,
+  setSelectedVersion,
+  isVersionDropdownOpen,
+  setIsVersionDropdownOpen,
+  setIsAccountDropdownOpen,
+  versionRef,
 }: Props) {
   return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-md btn-primary text-sm"
-      >
-        <span>{selected?.name || "Loading..."}</span>
-        <ChevronDown
-          size={14}
-          className={twMerge("transition-transform", open && "rotate-180")}
-        />
-      </button>
+    <div ref={versionRef} className="relative">
+      <div className="relative group overflow-visible inline-block">
+        <div className="absolute -inset-1 bg-linear-to-r from-blue-600 to-cyan-500 rounded-md blur opacity-25 group-hover:opacity-50 transition duration-500 pointer-events-none" />
+
+        <button
+          onClick={() => {
+            setIsVersionDropdownOpen((prev: boolean) => !prev);
+            setIsAccountDropdownOpen(false);
+          }}
+          className="relative z-10 flex items-center gap-2 px-3 py-1.5 rounded-md btn-primary text-sm font-medium"
+        >
+          <span>{selectedVersion?.name || "Loading..."}</span>
+
+          <ChevronDown
+            size={14}
+            className={cn(
+              "transition-transform",
+              isVersionDropdownOpen && "rotate-180",
+            )}
+          />
+        </button>
+      </div>
 
       <div
-        className={twMerge(
-          "absolute top-full left-0 mt-2 w-48 bg-saturn-panel border rounded-lg",
-          open ? "opacity-100" : "opacity-0 pointer-events-none",
+        className={cn(
+          "absolute top-full left-0 mt-2 w-48 bg-saturn-panel border border-saturn-border rounded-lg shadow-2xl z-50 py-1 overflow-hidden transition-all duration-200 origin-top",
+          isVersionDropdownOpen
+            ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
+            : "opacity-0 scale-95 -translate-y-2 pointer-events-none",
         )}
       >
-        {versions.map((v) => (
+        {versions.map((v: GameVersion) => (
           <button
             key={v.id}
             onClick={() => {
-              onSelect(v);
-              setOpen(false);
+              setSelectedVersion(v);
+              setIsVersionDropdownOpen(false);
             }}
-            className="w-full flex justify-between px-4 py-2 text-sm hover:bg-saturn-accent/10"
+            className="w-full flex items-center justify-between px-4 py-2 text-sm hover:bg-saturn-accent/10 hover:text-saturn-accent transition-colors"
           >
-            {v.name}
-            {selected?.id === v.id && <Check size={14} />}
+            <span>{v.name}</span>
+            {selectedVersion?.id === v.id && <Check size={14} />}
           </button>
         ))}
       </div>
