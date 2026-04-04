@@ -11,10 +11,7 @@ use std::{
 
 use lyceris::{
     error::Error,
-    http::{
-        downloader::{download, download_multiple},
-        fetch::fetch,
-    },
+    http::fetch::fetch,
     json::{
         java::{JavaFileManifest, JavaManifest},
         version::{
@@ -40,6 +37,8 @@ use lyceris::minecraft::{
     loader::Loader,
     parse::{parse_lib_path, ParseRule},
 };
+
+use crate::launcher::downloader::{download, download_multiple};
 
 /// Represents a file to be downloaded, including its metadata.
 #[derive(Clone)]

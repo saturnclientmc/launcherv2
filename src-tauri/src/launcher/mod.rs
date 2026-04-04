@@ -1,3 +1,4 @@
+pub mod downloader;
 pub mod install;
 
 use directories::ProjectDirs;
