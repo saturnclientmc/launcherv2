@@ -2,20 +2,21 @@ use futures::{stream, StreamExt};
 use reqwest::{Client, IntoUrl};
 use std::{
     path::Path,
-    sync::Arc,
-    time::{Duration, Instant},
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
+    time::Duration,
 };
 use tokio::{
-    fs::{create_dir_all, File},
-    io::AsyncWriteExt,
-    sync::Mutex,
-    time::timeout,
+    fs::File,
+    io::{AsyncWriteExt, BufWriter},
 };
 
 use lyceris::{
     error::Error,
     minecraft::{
-        emitter::{Emit, Emitter, Event},
+        emitter::{Emitter, Event},
         install::FileType,
     },
     util::retry::retry,
@@ -54,44 +55,40 @@ pub async fn download<P: AsRef<Path>>(
     emitter: Option<&Emitter>,
     client: Option<&Client>,
 ) -> lyceris::Result<u64> {
-    // Send a get request to the given url.
     let default_client = Client::default();
     let client = client.unwrap_or(&default_client);
+
     let response = client.get(url).send().await?;
 
     if !response.status().is_success() {
         return Err(Error::Download(response.status().to_string()));
     }
 
-    // Get the total size of the file to use at progression
     let total_size = response.content_length().unwrap_or(0);
     let mut downloaded: u64 = 0;
 
+    // 🔥 Assume dirs already created (move this OUTSIDE for max speed)
     if let Some(parent) = destination.as_ref().parent() {
-        if !parent.is_dir() {
-            create_dir_all(parent).await?;
-        }
+        let _ = tokio::fs::create_dir_all(parent).await;
     }
 
-    // Create a file to write the downloaded content
-    let mut file = File::create(&destination).await?;
+    let file = File::create(&destination).await?;
+    let mut writer = BufWriter::with_capacity(64 * 1024, file); // 🔥 BIG WIN
 
-    // Stream the response body
     let mut stream = response.bytes_stream();
 
-    let mut last_data_received;
+    let mut last_emit = 0;
 
-    while let Some(chunk_result) = timeout(Duration::from_secs(10), stream.next()).await? {
-        match chunk_result {
-            Ok(chunk) => {
-                // Reset the timer when data is received
-                last_data_received = Instant::now();
-                downloaded += chunk.len() as u64;
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk?;
 
-                // Write chunk to the file
-                file.write_all(&chunk).await?;
+        downloaded += chunk.len() as u64;
 
-                // Emit progress event
+        writer.write_all(&chunk).await?;
+
+        // 🔥 Emit less frequently (huge improvement)
+        if downloaded - last_emit > 256 * 1024 || downloaded == total_size {
+            if let Some(emitter) = emitter {
                 emitter
                     .emit(
                         Event::SingleDownloadProgress,
@@ -103,21 +100,12 @@ pub async fn download<P: AsRef<Path>>(
                     )
                     .await;
             }
-            Err(_) => {
-                // Timeout occurred (no chunk received in 3 seconds)
-                return Err(Error::Download(
-                    "Connection dead, no data for 3 seconds.".to_string(),
-                ));
-            }
-        }
 
-        // Check if no data has been received in the last 3 seconds
-        if last_data_received.elapsed() > Duration::from_secs(10) {
-            return Err(Error::Download(
-                "Connection dead, no data for 3 seconds.".to_string(),
-            ));
+            last_emit = downloaded;
         }
     }
+
+    writer.flush().await?;
 
     Ok(total_size)
 }
@@ -146,55 +134,60 @@ where
     P: AsRef<Path> + Send + 'static, // Path type
 {
     let total_files = downloads.len();
-    let total_downloaded = Arc::new(Mutex::new(0));
+    let total_downloaded = Arc::new(AtomicUsize::new(0));
+
     let tasks = downloads.into_iter().map(|(url, destination, file_type)| {
-        let total_downloaded = Arc::clone(&total_downloaded);
+        let total_downloaded = total_downloaded.clone();
+
         async move {
-            // Retry download logic
             let result = retry(
                 || async { download(url.as_str(), destination.as_ref(), emitter, client).await },
                 Result::is_ok,
                 3,
-                Duration::from_secs(5),
+                Duration::from_millis(300), // 🔥 faster retry
             )
             .await;
 
-            // Check if the download was successful
             match result {
                 Ok(_) => {
-                    // Update the progress counter
-                    let mut downloaded = total_downloaded.lock().await;
-                    *downloaded += 1;
+                    let downloaded = total_downloaded.fetch_add(1, Ordering::Relaxed) + 1;
 
-                    emitter
-                        .emit(
-                            Event::MultipleDownloadProgress,
-                            (
-                                destination.as_ref().to_string_lossy().into_owned(),
-                                *downloaded as u64,
-                                total_files as u64,
-                                file_type.to_string(),
-                            ),
-                        )
-                        .await;
+                    if downloaded % 25 == 0 || downloaded == total_files {
+                        if let Some(emitter) = emitter {
+                            emitter
+                                .emit(
+                                    Event::MultipleDownloadProgress,
+                                    (
+                                        destination.as_ref().to_string_lossy().into_owned(),
+                                        downloaded as u64,
+                                        total_files as u64,
+                                        file_type.to_string(),
+                                    ),
+                                )
+                                .await;
+                        }
+                    }
 
                     Ok::<(), Error>(())
                 }
-                Err(e) => {
-                    // Return the error immediately
-                    Err(e)
-                }
+                Err(e) => Err(e),
             }
         }
     });
 
-    // Create a stream of tasks with limited concurrency
-    let mut stream = stream::iter(tasks).buffered(10); // Limit concurrency here
+    let mut stream = stream::iter(tasks).buffer_unordered(get_optimal_concurrency());
 
-    // Poll the stream and handle results
     while let Some(result) = stream.next().await {
         result?;
     }
 
     Ok(())
+}
+
+fn get_optimal_concurrency() -> usize {
+    // Good defaults for Minecraft-scale downloads
+    match std::thread::available_parallelism() {
+        Ok(n) => (n.get() * 16).clamp(32, 128),
+        Err(_) => 64,
+    }
 }
