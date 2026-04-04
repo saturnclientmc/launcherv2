@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Sidebar from "./components/layout/Sidebar";
 import TopBar from "./components/layout/TopBar";
 import PlaySection from "./components/PlaySection";
@@ -20,6 +20,32 @@ export default function App() {
 
   const versionRef = useRef<HTMLDivElement | null>(null);
   const accountRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Node;
+
+      // Close version dropdown if clicked outside
+      if (versionRef.current && !versionRef.current.contains(target)) {
+        setIsVersionDropdownOpen(false);
+      }
+
+      // Close account dropdown if clicked outside
+      if (accountRef.current && !accountRef.current.contains(target)) {
+        setIsAccountDropdownOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    setSelectedVersion(versions[0]);
+  }, []);
 
   return (
     <div className="flex h-screen">

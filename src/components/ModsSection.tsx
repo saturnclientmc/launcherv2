@@ -11,10 +11,10 @@ import {
 import {
   getInstalledMods,
   discoverMods,
-  getVersions,
   toggleMod,
   installMod,
-} from "../lib/saturn";
+  versions,
+} from "@/lib/saturn";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { motion, AnimatePresence } from "framer-motion";
@@ -40,7 +40,6 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
   const [selectedVersionsForInstall, setSelectedVersionsForInstall] = useState<
     string[]
   >([]);
-  const [allVersions, setAllVersions] = useState<GameVersion[]>([]);
 
   useEffect(() => {
     const loadMods = async () => {
@@ -54,14 +53,6 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
     };
     loadMods();
   }, [activeTab, version.id, searchQuery]);
-
-  useEffect(() => {
-    const loadAllVersions = async () => {
-      const v = await getVersions();
-      setAllVersions(v);
-    };
-    loadAllVersions();
-  }, []);
 
   const handleToggleMod = async (modId: string) => {
     await toggleMod(modId);
@@ -243,7 +234,7 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
               </div>
 
               <div className="p-6 space-y-3 max-h-64 overflow-y-auto">
-                {allVersions.map((v) => {
+                {versions.map((v) => {
                   const isSupported =
                     selectedModForInstall.supported_versions.includes(v.id);
                   const isSelected = selectedVersionsForInstall.includes(v.id);
