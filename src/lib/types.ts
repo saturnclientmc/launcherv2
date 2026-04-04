@@ -12,6 +12,7 @@ export interface Mod {
 export interface GameVersion {
   id: string;
   name: string;
+  loader_version: string;
 }
 
 export interface LauncherSettings {

@@ -6,6 +6,7 @@ import ModsSection from "./components/ModsSection";
 import SettingsSection from "./components/SettingsSection";
 import { versions } from "./lib/saturn";
 import { GameVersion } from "./lib/types";
+import { MinecraftAccount } from "./lib/auth";
 
 type Section = "play" | "mods" | "settings";
 
@@ -20,6 +21,11 @@ export default function App() {
 
   const versionRef = useRef<HTMLDivElement | null>(null);
   const accountRef = useRef<HTMLDivElement | null>(null);
+
+  const [accounts, setAccounts] = useState<MinecraftAccount[]>([]);
+  const [activeAccount, setActiveAccount] = useState<MinecraftAccount | null>(
+    null,
+  );
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -62,11 +68,15 @@ export default function App() {
           setIsAccountDropdownOpen={setIsAccountDropdownOpen}
           versionRef={versionRef}
           accountRef={accountRef}
+          accounts={accounts}
+          setAccounts={setAccounts}
+          activeAccount={activeAccount}
+          setActiveAccount={setActiveAccount}
         />
 
         <div className="flex-1 p-8 overflow-y-scroll">
-          {active === "play" && selectedVersion && (
-            <PlaySection version={selectedVersion} />
+          {active === "play" && (
+            <PlaySection version={selectedVersion} account={activeAccount} />
           )}
           {active === "mods" && selectedVersion && (
             <ModsSection version={selectedVersion} />

@@ -1,14 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { User, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Props } from "./props";
-import { authList, authRemove, authCreateLink, authLogin } from "@/lib/auth";
+import {
+  authList,
+  authRemove,
+  authCreateLink,
+  authLogin,
+  MinecraftAccount,
+} from "@/lib/auth";
 import { listen } from "@tauri-apps/api/event";
-
-interface Account {
-  uuid: string;
-  username: string;
-}
 
 function UserComponent({
   username,
@@ -43,10 +44,11 @@ export default function AccountDropdown({
   isAccountDropdownOpen,
   setIsAccountDropdownOpen,
   accountRef,
+  activeAccount,
+  setActiveAccount,
+  accounts,
+  setAccounts,
 }: Props) {
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [active, setActive] = useState<Account | null>(null);
-
   // Load accounts
   useEffect(() => {
     loadAccounts();
@@ -56,26 +58,26 @@ export default function AccountDropdown({
     const accs = await authList();
     setAccounts(accs);
 
-    if (accs.length && !active) {
-      setActive(accs[0]); // default
+    if (accs.length && !activeAccount) {
+      setActiveAccount(accs[0]); // default
     }
   }
 
   // Switch account
-  function switchAccount(acc: Account) {
-    setActive(acc);
+  function switchAccount(acc: MinecraftAccount) {
+    setActiveAccount(acc);
     setIsAccountDropdownOpen(false);
   }
 
   // Logout (remove account)
   async function logout() {
-    if (!active) return;
+    if (!activeAccount) return;
 
-    await authRemove(active.uuid);
+    await authRemove(activeAccount.uuid);
 
     const updated = await authList();
     setAccounts(updated);
-    setActive(updated[0] || null);
+    setActiveAccount(updated[0] || null);
   }
 
   // Add account (open Microsoft login)
@@ -89,7 +91,7 @@ export default function AccountDropdown({
     });
   }
 
-  const otherAccounts = accounts.filter((a) => a.uuid !== active?.uuid);
+  const otherAccounts = accounts.filter((a) => a.uuid !== activeAccount?.uuid);
 
   return (
     <div ref={accountRef} className="relative group overflow-visible">
@@ -102,13 +104,13 @@ export default function AccountDropdown({
         onClick={() => setIsAccountDropdownOpen((prev: boolean) => !prev)}
       >
         <div className="absolute -top-2 left-4 group-hover:scale-110 transition-transform duration-700 w-12 overflow-hidden z-20">
-          {active && (
+          {activeAccount && (
             <img
-              src={`https://render.crafty.gg/3d/bust/${active.uuid}`}
+              src={`https://render.crafty.gg/3d/bust/${activeAccount.uuid}`}
               className="w-full h-full object-cover"
             />
           )}
-          {!active && (
+          {!activeAccount && (
             <img
               src={`https://render.crafty.gg/3d/bust/MHF_Steve`}
               className="w-full h-full object-cover"
@@ -121,7 +123,7 @@ export default function AccountDropdown({
             Playing as
           </p>
           <p className="text-sm font-bold text-white">
-            {active?.username || "No Account"}
+            {activeAccount?.username || "No Account"}
           </p>
         </div>
       </button>
@@ -136,8 +138,11 @@ export default function AccountDropdown({
         )}
       >
         {/* Current account */}
-        {active && (
-          <UserComponent username={active.username} uuid={active.uuid} />
+        {activeAccount && (
+          <UserComponent
+            username={activeAccount.username}
+            uuid={activeAccount.uuid}
+          />
         )}
 
         {/* Other accounts */}

@@ -1,15 +1,20 @@
+pub mod auth;
 pub mod downloader;
 pub mod install;
-pub mod auth;
 
 use directories::ProjectDirs;
-use lyceris::minecraft::{
-    config::ConfigBuilder,
-    emitter::{Emitter, Event},
-    launch::launch,
-    loader::fabric::Fabric,
+use lyceris::{
+    auth::microsoft::MinecraftAccount,
+    minecraft::{
+        config::ConfigBuilder,
+        emitter::{Emitter, Event},
+        launch::launch,
+        loader::fabric::Fabric,
+    },
 };
 use once_cell::sync::Lazy;
+
+use crate::GameVersion;
 
 pub static LAUNCHER_DIR: Lazy<ProjectDirs> = Lazy::new(|| {
     ProjectDirs::from("org", "SaturnLauncher", "SaturnLauncher")
@@ -17,7 +22,7 @@ pub static LAUNCHER_DIR: Lazy<ProjectDirs> = Lazy::new(|| {
 });
 
 #[tauri::command]
-pub async fn launch_game() -> Result<(), String> {
+pub async fn launch_game(version: GameVersion, account: MinecraftAccount) -> Result<(), String> {
     // Emitter uses `EventEmitter` inside of it
     // and it uses tokio::Mutex for locking.
     // That causes emitter methods to be async.
@@ -58,14 +63,17 @@ pub async fn launch_game() -> Result<(), String> {
     let current_dir = LAUNCHER_DIR.data_dir();
 
     let config = ConfigBuilder::new(
-        current_dir.join("1.21.4"),
-        "1.21.4".into(),
-        lyceris::auth::AuthMethod::Offline {
-            username: "Lyceris".into(),
-            uuid: None,
+        current_dir.join(&version.id),
+        version.id.clone(),
+        lyceris::auth::AuthMethod::Microsoft {
+            username: account.username,
+            xuid: account.xuid,
+            uuid: account.uuid,
+            access_token: account.access_token,
+            refresh_token: account.refresh_token,
         },
     )
-    .loader(Fabric("0.18.6".to_string()).into())
+    .loader(Fabric(version.loader_version).into())
     .build();
 
     println!("Starting installation");

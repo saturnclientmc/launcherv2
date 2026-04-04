@@ -6,6 +6,7 @@ export const versions: GameVersion[] = [
   {
     id: "1.21.4",
     name: "Fabric 1.21.4",
+    loader_version: "0.18.6",
   },
 ];
 
