@@ -30,7 +30,6 @@ pub struct GameVersion {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct LauncherSettings {
-    pub jvm_arguments: String,
     pub max_memory: u32,
 }
 
@@ -44,11 +43,7 @@ pub struct AppState {
 impl Default for AppState {
     fn default() -> Self {
         Self {
-            settings: LauncherSettings {
-                jvm_arguments: "-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200"
-                    .into(),
-                max_memory: 4096,
-            },
+            settings: LauncherSettings { max_memory: 4096 },
             version: String::from("1.21.6"),
         }
     }

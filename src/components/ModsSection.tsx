@@ -11,8 +11,9 @@ import {
 import {
   getInstalledMods,
   discoverMods,
-  toggleMod,
+  enableMod,
   installMod,
+  disableMod,
 } from "@/lib/saturn";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -41,21 +42,32 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
     string[]
   >([]);
 
-  useEffect(() => {
-    const loadMods = async () => {
-      if (activeTab === "installed") {
-        const m = await getInstalledMods(version.id);
-        setMods(m);
-      } else {
-        const m = await discoverMods(searchQuery);
+  const loadMods = async () => {
+    if (activeTab === "installed") {
+      const m = await getInstalledMods(version.id);
+      setMods(m);
+    } else {
+      const m = await discoverMods(searchQuery);
+      if (activeTab === "discover") {
+        // Fix: If discover mods takes too long and the user switches tabs it glitches
         setMods(m);
       }
-    };
-    loadMods();
-  }, [activeTab, version.id, searchQuery]);
+    }
+  };
 
-  const handleToggleMod = async (modId: string) => {
-    await toggleMod(modId);
+  useEffect(() => {
+    const id = setTimeout(loadMods, 800);
+    return () => clearTimeout(id);
+  }, [version.id, searchQuery]);
+
+  useEffect(() => {
+    setMods([]);
+    loadMods();
+  }, [activeTab]);
+
+  const handleToggleMod = async (modId: string, enable: boolean) => {
+    if (enable) await enableMod(version.id, modId);
+    else await disableMod(version.id, modId);
     const m = await getInstalledMods(version.id);
     setMods(m);
   };
@@ -143,7 +155,15 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
               className="panel p-4 flex items-center gap-4 hover:border-white/10 transition-colors"
             >
               <div className="w-12 h-12 rounded-lg bg-zinc-800 border border-saturn-border flex items-center justify-center shrink-0">
-                <Package size={24} className="text-saturn-text-secondary" />
+                {mod.icon ? (
+                  <img
+                    src={mod.icon}
+                    alt="Mod Icon"
+                    className="w-full h-full rounded-lg"
+                  />
+                ) : (
+                  <Package size={24} className="text-saturn-text-secondary" />
+                )}
               </div>
 
               <div className="flex-1 min-w-0">
@@ -165,7 +185,7 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
                 {activeTab === "installed" ? (
                   <>
                     <button
-                      onClick={() => handleToggleMod(mod.id)}
+                      onClick={() => handleToggleMod(mod.id, !mod.enabled)}
                       className={cn(
                         "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
                         mod.enabled

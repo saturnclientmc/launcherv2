@@ -39,8 +39,6 @@ const PlaySection: React.FC<PlaySectionProps> = ({ version, account }) => {
     };
   }, []);
 
-  console.log(isLaunching);
-
   return (
     <div className="h-full relative">
       {/* Background Image */}

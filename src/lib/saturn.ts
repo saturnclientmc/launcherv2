@@ -6,53 +6,52 @@ export async function getInstalledMods(versionId: string): Promise<Mod[]> {
   return await invoke("get_installed_mods", { versionId });
 }
 
-export async function toggleMod(modId: string): Promise<void> {
-  await invoke("toggle_mod", { modId });
+export async function enableMod(version: string, modId: string): Promise<void> {
+  await invoke("enable_mod", { version, fileName: modId });
+}
+
+export async function disableMod(
+  version: string,
+  modId: string,
+): Promise<void> {
+  await invoke("disable_mod", { version, fileName: modId });
 }
 
 export async function discoverMods(query: string): Promise<Mod[]> {
-  const allDiscoverable: Mod[] = [
-    {
-      id: "modmenu",
-      name: "Mod Menu",
-      version: "7.2.2",
-      author: "TerraformersMC",
-      description: "Adds a mod menu to view the list of installed mods.",
-      enabled: false,
-      supported_versions: ["1.20.1", "1.20.4", "1.21"],
-    },
-    {
-      id: "starlight",
-      name: "Starlight",
-      version: "1.1.2",
-      author: "Spottedleaf",
-      description: "Rewrites the light engine to fix performance issues.",
-      enabled: false,
-      supported_versions: ["1.20.1"],
-    },
-    {
-      id: "ferritecore",
-      name: "FerriteCore",
-      version: "6.0.1",
-      author: "malte0811",
-      description: "Memory usage optimizations.",
-      enabled: false,
-      supported_versions: ["1.20.1", "1.20.4", "1.21"],
-    },
-  ];
+  const url = new URL("https://api.modrinth.com/v2/search");
 
-  if (!query) return allDiscoverable;
+  if (query) {
+    url.searchParams.set("query", query);
+  }
 
-  return allDiscoverable.filter((m) =>
-    m.name.toLowerCase().includes(query.toLowerCase()),
+  // Optional but recommended filters
+  url.searchParams.set("facets", JSON.stringify([["project_type:mod"]]));
+  url.searchParams.set("limit", "20");
+
+  const res = await fetch(url.toString());
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch mods from Modrinth");
+  }
+
+  const data = await res.json();
+
+  return data.hits.map(
+    (mod: any): Mod => ({
+      id: mod.project_id,
+      name: mod.title,
+      version: "latest",
+      author: mod.author,
+      description: mod.description,
+      enabled: false,
+      icon: mod.icon_url,
+      supported_versions: mod.versions || [],
+    }),
   );
 }
 
-export async function installMod(
-  mod: Mod,
-  versionsList: string[],
-): Promise<void> {
-  await invoke("install_mod", { modItem: mod });
+export async function installMod(mod: Mod, versions: string[]): Promise<void> {
+  await invoke("install_mod", { modMeta: mod, versions });
 }
 
 // --- Settings ---

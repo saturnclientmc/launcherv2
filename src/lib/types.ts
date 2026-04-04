@@ -16,6 +16,5 @@ export interface GameVersion {
 }
 
 export interface LauncherSettings {
-  jvm_arguments: string;
   max_memory: number;
 }
