@@ -1,13 +1,14 @@
+pub mod install;
+
 use directories::ProjectDirs;
 use lyceris::minecraft::{
     config::ConfigBuilder,
     emitter::{Emitter, Event},
-    install::install,
     launch::launch,
 };
 use once_cell::sync::Lazy;
 
-static LAUNCHER_DIR: Lazy<ProjectDirs> = Lazy::new(|| {
+pub static LAUNCHER_DIR: Lazy<ProjectDirs> = Lazy::new(|| {
     ProjectDirs::from("org", "SaturnLauncher", "SaturnLauncher")
         .expect("Failed to create project directories")
 });
@@ -66,7 +67,7 @@ pub async fn launch_game() -> Result<(), String> {
 
     // Install method also checks for broken files
     // and downloads them again if they are broken.
-    install(&config, Some(&emitter))
+    install::install(&config, Some(&emitter))
         .await
         .map_err(|e| e.to_string())?;
 
