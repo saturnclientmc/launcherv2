@@ -21,12 +21,12 @@ use lyceris::{
         },
     },
     minecraft::{
-        install::FileType, CLASSPATH_SEPARATOR, JAVA_MANIFEST_ENDPOINT, RESOURCES_ENDPOINT,
-        VERSION_MANIFEST_ENDPOINT,
+        emitter::{Emit, Event},
+        install::FileType,
+        CLASSPATH_SEPARATOR, JAVA_MANIFEST_ENDPOINT, RESOURCES_ENDPOINT, VERSION_MANIFEST_ENDPOINT,
     },
     util::{
         extract::{extract_file, read_file_from_jar},
-        hash::calculate_sha1,
         json::{read_json, write_json},
     },
 };
@@ -44,7 +44,6 @@ use crate::launcher::downloader::{download, download_multiple};
 #[derive(Clone)]
 struct DownloadFile {
     file_name: String,
-    sha1: String,
     url: String,
     path: PathBuf,
     r#type: FileType,
@@ -63,13 +62,25 @@ pub async fn install<T: Loader>(
     config: &Config<T>,
     emitter: Option<&Emitter>,
 ) -> lyceris::Result<()> {
-    let manifest: VersionManifest =
-        fetch(VERSION_MANIFEST_ENDPOINT, config.client.as_ref()).await?;
+    emitter.emit(Event::Console, "Fetching manifest...").await;
+
+    let (manifest, java_manifest) = tokio::join!(
+        fetch(VERSION_MANIFEST_ENDPOINT, config.client.as_ref()),
+        fetch(JAVA_MANIFEST_ENDPOINT, config.client.as_ref())
+    );
+
+    let manifest = manifest?;
+    let java_manifest = java_manifest?;
+
     let version_json_path = config.get_version_json_path();
     let mut meta: VersionMeta = if !version_json_path.exists() {
+        emitter
+            .emit(Event::Console, "Fetching version metadata")
+            .await;
         let mut meta =
             fetch_version_meta(&manifest, &config.version, config.client.as_ref()).await?;
         if let Some(loader) = &config.loader {
+            emitter.emit(Event::Console, "Resolving loader").await;
             meta = loader.merge(&config.into_vanilla(), meta, emitter).await?;
         }
         write_json(&version_json_path, &meta).await?;
@@ -77,6 +88,8 @@ pub async fn install<T: Loader>(
     } else {
         read_json(&version_json_path).await?
     };
+
+    emitter.emit(Event::Console, "Fetching assets index").await;
 
     let asset_index_path = config
         .get_indexes_path()
@@ -95,6 +108,8 @@ pub async fn install<T: Loader>(
         create_dir_all(&natives_path)?;
     }
 
+    emitter.emit(Event::Console, "Configuring files").await;
+
     let check_natives = fs::read_dir(&natives_path)?.count() == 0;
     let mut to_be_extracted = Vec::with_capacity(10);
 
@@ -102,7 +117,6 @@ pub async fn install<T: Loader>(
     let java_version = meta.java_version.as_ref().unwrap_or(&default_java_version);
     let runtime_path = config.get_runtime_path().join(&java_version.component);
 
-    let java_manifest: JavaManifest = fetch(JAVA_MANIFEST_ENDPOINT, config.client.as_ref()).await?;
     let java_url = get_java_url(&java_manifest, java_version)?;
     let java_files: JavaFileManifest = fetch(java_url, config.client.as_ref()).await?;
 
@@ -115,6 +129,8 @@ pub async fn install<T: Loader>(
         check_natives,
         &mut to_be_extracted,
     )?;
+
+    emitter.emit(Event::Console, "Downloading files").await;
 
     download_necessary(
         file_map,
@@ -251,9 +267,7 @@ fn build_file_map(
     to_be_extracted: &mut Vec<vanilla::File>,
 ) -> lyceris::Result<Vec<DownloadFile>> {
     let version_jar_path = config.get_version_jar_path();
-    let version_download = if !version_jar_path.exists()
-        || !calculate_sha1(&version_jar_path)?.eq(&meta.downloads.client.sha1)
-    {
+    let version_download = if !version_jar_path.exists() {
         Some(DownloadFile {
             file_name: version_jar_path
                 .file_name()
@@ -262,7 +276,6 @@ fn build_file_map(
                 .to_string(),
             r#type: FileType::Library,
             path: version_jar_path,
-            sha1: meta.downloads.client.sha1.clone(),
             url: meta.downloads.client.url.clone(),
         })
     } else {
@@ -277,7 +290,6 @@ fn build_file_map(
             let hash = &meta.hash;
             DownloadFile {
                 file_name: key.clone(),
-                sha1: hash.clone(),
                 url: format!("{}/{}/{}", RESOURCES_ENDPOINT, &hash[0..2], hash),
                 path: assets_path.join("objects").join(&hash[0..2]).join(hash),
                 r#type: FileType::Asset {
@@ -324,7 +336,6 @@ fn build_file_map(
                                     .unwrap_or_default()
                                     .to_string_lossy()
                                     .to_string(),
-                                sha1,
                                 url,
                                 path,
                                 r#type: FileType::Library,
@@ -340,7 +351,6 @@ fn build_file_map(
                     .unwrap_or_default()
                     .to_string_lossy()
                     .to_string(),
-                sha1: artifact.sha1.clone(),
                 url: artifact.url.clone(),
                 path: config
                     .game_dir
@@ -363,7 +373,6 @@ fn build_file_map(
                     .unwrap_or(name)
                     .to_string(),
                 path,
-                sha1: downloads.raw.sha1.clone(),
                 url: downloads.raw.url.clone(),
                 r#type: FileType::Java,
             })
@@ -565,7 +574,7 @@ async fn download_necessary(
                     }
                 }
 
-                if !target_path.exists() || calculate_sha1(&target_path).ok()? != file.sha1 {
+                if !target_path.exists() {
                     fs::copy(&file.path, &target_path).ok();
                 }
 

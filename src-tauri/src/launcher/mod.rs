@@ -6,6 +6,7 @@ use lyceris::minecraft::{
     config::ConfigBuilder,
     emitter::{Emitter, Event},
     launch::launch,
+    loader::fabric::Fabric,
 };
 use once_cell::sync::Lazy;
 
@@ -56,21 +57,25 @@ pub async fn launch_game() -> Result<(), String> {
     let current_dir = LAUNCHER_DIR.data_dir();
 
     let config = ConfigBuilder::new(
-        current_dir.join("game"),
+        current_dir.join("1.21.4"),
         "1.21.4".into(),
         lyceris::auth::AuthMethod::Offline {
             username: "Lyceris".into(),
-            // If none given, it will be generated.
             uuid: None,
         },
     )
+    .loader(Fabric("0.18.6".to_string()).into())
     .build();
+
+    println!("Starting installation");
 
     // Install method also checks for broken files
     // and downloads them again if they are broken.
     install::install(&config, Some(&emitter))
         .await
         .map_err(|e| e.to_string())?;
+
+    println!("Finished installing");
 
     // This method never downloads any file and just runs the game.
     launch(&config, Some(&emitter))
