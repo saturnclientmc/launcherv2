@@ -1,10 +1,9 @@
 use directories::ProjectDirs;
-use lighty_launcher::{
-    auth::{Authenticator, OfflineAuth},
-    java::JavaDistribution,
-    launch::Launch,
-    loaders::Loader,
-    version::VersionBuilder,
+use lyceris::minecraft::{
+    config::ConfigBuilder,
+    emitter::{Emitter, Event},
+    install::install,
+    launch::launch,
 };
 use once_cell::sync::Lazy;
 
@@ -14,33 +13,70 @@ static LAUNCHER_DIR: Lazy<ProjectDirs> = Lazy::new(|| {
 });
 
 #[tauri::command]
-pub async fn launch() -> Result<(), String> {
-    println!("Launcher directory: {:?}", LAUNCHER_DIR);
+pub async fn launch_game() -> Result<(), String> {
+    // Emitter uses `EventEmitter` inside of it
+    // and it uses tokio::Mutex for locking.
+    // That causes emitter methods to be async.
+    let emitter = Emitter::default();
 
-    tracing_subscriber::fmt::init();
+    // Single download progress event send when
+    // a file is being downloaded.
+    emitter
+        .on(
+            Event::SingleDownloadProgress,
+            |(path, current, total): (String, u64, u64)| {
+                println!("Downloading {} - {}/{}", path, current, total);
+            },
+        )
+        .await;
 
-    // Authenticate
-    let mut auth = OfflineAuth::new("PlayerName");
-    let profile = auth
-        .authenticate()
+    // Multiple download progress event send when
+    // multiple files are being downloaded.
+    // Java, libraries and assets are downloaded in parallel and
+    // this event is triggered for each file.
+    emitter
+        .on(
+            Event::MultipleDownloadProgress,
+            |(_, current, total, _): (String, u64, u64, String)| {
+                println!("Downloading {}/{}", current, total);
+            },
+        )
+        .await;
+
+    // Console event send when a line is printed to the console.
+    // It uses a seperated tokio thread to handle this operation.
+    emitter
+        .on(Event::Console, |line: String| {
+            println!("Line: {}", line);
+        })
+        .await;
+
+    let current_dir = LAUNCHER_DIR.data_dir();
+
+    let config = ConfigBuilder::new(
+        current_dir.join("game"),
+        "1.21.4".into(),
+        lyceris::auth::AuthMethod::Offline {
+            username: "Lyceris".into(),
+            // If none given, it will be generated.
+            uuid: None,
+        },
+    )
+    .build();
+
+    // Install method also checks for broken files
+    // and downloads them again if they are broken.
+    install(&config, Some(&emitter))
         .await
-        .map_err(|e| format!("Authentication failed: {}", e))?;
+        .map_err(|e| e.to_string())?;
 
-    // Create version instance
-    let mut version = VersionBuilder::new(
-        "vanilla-1.21.1",
-        Loader::Vanilla,
-        "",
-        "1.21.1",
-        &LAUNCHER_DIR,
-    );
-
-    // Launch the game
-    version
-        .launch(&profile, JavaDistribution::Temurin)
-        .run()
+    // This method never downloads any file and just runs the game.
+    launch(&config, Some(&emitter))
         .await
-        .map_err(|e| format!("Launch failed: {}", e))?;
+        .map_err(|e| e.to_string())?
+        .wait()
+        .await
+        .map_err(|e| e.to_string())?;
 
     Ok(())
 }

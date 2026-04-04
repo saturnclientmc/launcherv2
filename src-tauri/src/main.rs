@@ -15,7 +15,7 @@ fn main() {
             install_mod,
             get_settings,
             update_settings,
-            saturn_launcher_lib::launcher::launch
+            saturn_launcher_lib::launcher::launch_game
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

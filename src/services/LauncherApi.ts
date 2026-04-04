@@ -9,5 +9,5 @@ export async function authenticate() {
 }
 
 export async function launch() {
-  return await invoke("launch");
+  return await invoke("launch_game");
 }
