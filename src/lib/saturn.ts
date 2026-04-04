@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { GameVersion, LauncherSettings, Mod } from "./Types";
+import { GameVersion, LauncherSettings, Mod } from "./types";
 
 // --- Versions ---
 export async function getVersions(): Promise<GameVersion[]> {

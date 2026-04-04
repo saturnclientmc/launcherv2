@@ -7,9 +7,9 @@ import {
   Info,
   AlertTriangle,
 } from "lucide-react";
-import { getSettings, updateSettings } from "../services/SaturnApi";
+import { getSettings, updateSettings } from "../lib/saturn";
 import { motion } from "framer-motion";
-import { LauncherSettings } from "@/services/Types";
+import { LauncherSettings } from "@/lib/types";
 
 const SettingsSection: React.FC = () => {
   const [settings, setSettings] = useState<LauncherSettings | null>(null);

@@ -3,8 +3,8 @@ import { Play, Loader2 } from "lucide-react";
 // import { launchGame } from "../services/SaturnApi";
 import Bg from "@/assets/bg.png";
 import { listen } from "@tauri-apps/api/event";
-import { GameVersion } from "@/services/Types";
-import { launch } from "@/services/LauncherApi";
+import { GameVersion } from "@/lib/types";
+import { launch } from "@/lib/launcher";
 
 interface PlaySectionProps {
   version: GameVersion;

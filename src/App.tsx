@@ -8,7 +8,7 @@ import {
   User,
   LogOut,
 } from "lucide-react";
-import { getVersions } from "./services/SaturnApi";
+import { getVersions } from "./lib/saturn";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import Logo from "@/assets/logo.png";
@@ -22,7 +22,7 @@ function cn(...inputs: ClassValue[]) {
 import PlaySection from "./components/PlaySection";
 import ModsSection from "./components/ModsSection";
 import SettingsSection from "./components/SettingsSection";
-import { GameVersion } from "./services/Types";
+import { GameVersion } from "./lib/types";
 
 type Section = "play" | "mods" | "settings";
 
