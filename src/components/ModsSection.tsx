@@ -151,7 +151,11 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
               className="panel p-4 flex items-center gap-4 hover:border-white/10 transition-colors"
             >
               <div className="w-12 h-12 rounded-lg bg-zinc-800 border border-saturn-border flex items-center justify-center shrink-0">
-                <Package size={24} className="text-saturn-text-secondary" />
+                {mod.icon ? (
+                  <img src={mod.icon} alt="Mod Icon" className="w-full h-full rounded-lg" />
+                ) : (
+                  <Package size={24} className="text-saturn-text-secondary" />
+                )}
               </div>
 
               <div className="flex-1 min-w-0">
