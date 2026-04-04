@@ -53,3 +53,9 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #3f3f46;
 }
+
+/* Define the fade-in animation */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

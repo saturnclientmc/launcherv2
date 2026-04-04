@@ -65,3 +65,12 @@ export async function updateSettings(
 ): Promise<void> {
   await invoke("update_settings", { newSettings });
 }
+
+// --- Version ---
+export async function getVersion(): Promise<string> {
+  return await invoke("get_version");
+}
+
+export async function updateVersion(version: string): Promise<void> {
+  await invoke("update_version", { version });
+}
