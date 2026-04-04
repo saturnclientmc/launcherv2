@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { User, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Props } from "./props";
-import { authList, authRemove, authCreateLink } from "@/lib/auth";
+import { authList, authRemove, authCreateLink, authLogin } from "@/lib/auth";
+import { listen } from "@tauri-apps/api/event";
 
 interface Account {
   uuid: string;
@@ -81,6 +82,11 @@ export default function AccountDropdown({
   async function addAccount() {
     const url = await authCreateLink();
     console.log("Opening auth URL:", url);
+    listen<string>("auth-code", async (event) => {
+      const code = event.payload;
+      await authLogin(code);
+      await loadAccounts();
+    });
   }
 
   const otherAccounts = accounts.filter((a) => a.uuid !== active?.uuid);
