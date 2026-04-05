@@ -21,6 +21,7 @@ import { twMerge } from "tailwind-merge";
 import { motion, AnimatePresence } from "framer-motion";
 import { GameVersion, Mod } from "@/lib/types";
 import { versions } from "@/lib/launcher";
+import toast from "react-hot-toast";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -90,12 +91,17 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
 
   const handleInstall = async () => {
     if (selectedModForInstall && selectedVersionsForInstall.length > 0) {
-      await installMod(selectedModForInstall, selectedVersionsForInstall);
       setIsInstallDialogOpen(false);
-      if (activeTab === "installed") {
-        const m = await getInstalledMods(version.id);
-        setMods(m);
-      }
+      toast.promise(installMod(selectedModForInstall, selectedVersionsForInstall), {
+        loading: `Installing mod: ${selectedModForInstall.name}`,
+        success: `Mod sucessfully installed: ${selectedModForInstall.name}`,
+        error: (e) => `${selectedModForInstall.name} Failed: ${e}`
+      }).then(async () => {
+        if (activeTab === "installed") {
+          const m = await getInstalledMods(version.id);
+          setMods(m);
+        }
+      }).catch(console.error);
     }
   };
 
@@ -281,7 +287,7 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
                           ? "bg-saturn-accent/10 border-saturn-accent/50"
                           : "bg-white/5 border-transparent hover:border-white/10",
                         !isSupported &&
-                          "opacity-40 cursor-not-allowed grayscale",
+                        "opacity-40 cursor-not-allowed grayscale",
                       )}
                     >
                       <div className="flex items-center gap-3">
