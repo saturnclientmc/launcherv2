@@ -186,7 +186,7 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
                 <div className="flex items-center gap-2">
                   <h3 className="font-bold text-sm truncate">{mod.name}</h3>
                   <span className="text-[10px] text-saturn-text-secondary font-medium px-1.5 py-0.5 rounded bg-white/5">
-                    v{mod.version}
+                    {mod.version}
                   </span>
                   <span className="text-[10px] text-saturn-text-secondary">
                     by {mod.author}
