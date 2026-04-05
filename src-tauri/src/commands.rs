@@ -4,7 +4,7 @@ use serde::Deserialize;
 use tauri::{AppHandle, Emitter, State};
 use tokio::fs;
 
-use crate::{launcher::LAUNCHER_DIR, save_state, LauncherSettings, Mod, SharedState};
+use crate::{launcher::launcher_dir, save_state, LauncherSettings, Mod, SharedState};
 
 #[derive(Deserialize)]
 struct ModrinthVersion {
@@ -25,12 +25,12 @@ struct ModrinthFile {
 pub async fn get_installed_mods(version_id: String) -> Result<Vec<Mod>, String> {
     let mut mods = Vec::new();
 
-    let base_dir = LAUNCHER_DIR.data_dir().join(&version_id).join("mods");
+    let base_dir = launcher_dir().join(&version_id).join("mods");
 
     let enabled_dir = base_dir.clone();
     let disabled_dir = base_dir.join("disabled_mods");
 
-    let cache_dir = LAUNCHER_DIR.data_dir().join("cache");
+    let cache_dir = launcher_dir().join("cache");
 
     // process a directory async
     async fn process_dir(dir: PathBuf, enabled: bool, cache_dir: PathBuf) -> Vec<Mod> {
@@ -108,7 +108,7 @@ fn fallback_mod(file_name: &str, enabled: bool) -> Mod {
 #[tauri::command]
 pub async fn remove_mod(version: String, file_name: String) -> Result<(), String> {
     // mods folder
-    let mods_dir: PathBuf = LAUNCHER_DIR.data_dir().join(&version).join("mods");
+    let mods_dir: PathBuf = launcher_dir().join(&version).join("mods");
 
     // File to remove
     let mut source = mods_dir.join(&file_name);
@@ -130,7 +130,7 @@ pub async fn remove_mod(version: String, file_name: String) -> Result<(), String
 #[tauri::command]
 pub async fn disable_mod(version: String, file_name: String) -> Result<(), String> {
     // mods folder
-    let mods_dir: PathBuf = LAUNCHER_DIR.data_dir().join(&version).join("mods");
+    let mods_dir: PathBuf = launcher_dir().join(&version).join("mods");
 
     // disabled_mods folder
     let disabled_dir = mods_dir.join("disabled_mods");
@@ -157,7 +157,7 @@ pub async fn disable_mod(version: String, file_name: String) -> Result<(), Strin
 
 #[tauri::command]
 pub async fn enable_mod(version: String, file_name: String) -> Result<(), String> {
-    let mods_dir = LAUNCHER_DIR.data_dir().join(&version).join("mods");
+    let mods_dir = launcher_dir().join(&version).join("mods");
 
     let disabled_dir = mods_dir.join("disabled_mods");
 
@@ -181,7 +181,7 @@ pub async fn install_mod(mut mod_meta: Mod, versions: Vec<String>) -> Result<(),
 
     println!("Installing {} for {:?}", mod_meta.name, versions);
 
-    let cache_dir = LAUNCHER_DIR.data_dir().join("cache");
+    let cache_dir = launcher_dir().join("cache");
     fs::create_dir_all(&cache_dir)
         .await
         .map_err(|e| e.to_string())?;
@@ -228,7 +228,7 @@ pub async fn install_mod(mut mod_meta: Mod, versions: Vec<String>) -> Result<(),
             .await
             .map_err(|e| e.to_string())?;
 
-        let dir: PathBuf = LAUNCHER_DIR.data_dir().join(&mc_version).join("mods");
+        let dir: PathBuf = launcher_dir().join(&mc_version).join("mods");
 
         fs::create_dir_all(&dir).await.map_err(|e| e.to_string())?;
 
@@ -304,7 +304,7 @@ pub async fn install_paths(
             .and_then(|name| name.to_str())
             .ok_or_else(|| String::from("File name not found"))?;
 
-        let version_dir = LAUNCHER_DIR.data_dir().join(&state.lock().unwrap().version);
+        let version_dir = launcher_dir().join(&state.lock().unwrap().version);
 
         let mc_child = if path.ends_with(".jar") {
             "mods"

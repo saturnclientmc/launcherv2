@@ -2,9 +2,13 @@ pub mod commands;
 pub mod launcher;
 
 use serde::{Deserialize, Serialize};
-use std::{fs, path::PathBuf, sync::{Arc, Mutex}};
+use std::{
+    fs,
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
 
-use crate::launcher::LAUNCHER_DIR;
+use crate::launcher::launcher_dir;
 
 pub type SharedState = Arc<Mutex<AppState>>;
 
@@ -51,7 +55,7 @@ impl Default for AppState {
 
 // Helper to get config path
 fn config_path() -> PathBuf {
-    LAUNCHER_DIR.config_dir().join("launcher.json")
+    launcher_dir().join("launcher.json")
 }
 
 // --- Load ---
@@ -101,4 +105,3 @@ pub fn save_state(state: &SharedState) {
         }
     }
 }
-

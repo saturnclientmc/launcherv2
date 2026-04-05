@@ -2,7 +2,8 @@ pub mod auth;
 pub mod downloader;
 pub mod install;
 
-use directories::ProjectDirs;
+use std::{env, path::PathBuf};
+
 use lyceris::{
     auth::microsoft::MinecraftAccount,
     minecraft::{
@@ -12,15 +13,35 @@ use lyceris::{
         loader::fabric::Fabric,
     },
 };
-use once_cell::sync::Lazy;
+
 use tauri::{Emitter as _, State};
 
 use crate::{GameVersion, SharedState};
 
-pub static LAUNCHER_DIR: Lazy<ProjectDirs> = Lazy::new(|| {
-    ProjectDirs::from("org", "SaturnLauncher", "SaturnLauncher")
-        .expect("Failed to create project directories")
-});
+pub fn launcher_dir() -> PathBuf {
+    if cfg!(target_os = "macos") {
+        let home = env::var("HOME")
+            .map(PathBuf::from)
+            .expect("HOME environment variable not set");
+
+        home.join("Library/Application Support/SaturnLauncher")
+    } else if cfg!(target_os = "windows") {
+        env::var("APPDATA")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| PathBuf::from("."))
+            .join("SaturnLauncher")
+    } else {
+        env::var("XDG_DATA_HOME")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| {
+                env::var("HOME")
+                    .map(PathBuf::from)
+                    .unwrap_or_else(|_| PathBuf::from("."))
+                    .join(".local/share")
+            })
+            .join("SaturnLauncher")
+    }
+}
 
 #[tauri::command]
 pub async fn launch_game(
@@ -70,10 +91,8 @@ pub async fn launch_game(
         })
         .await;
 
-    let current_dir = LAUNCHER_DIR.data_dir();
-
     let config = ConfigBuilder::new(
-        current_dir.join(&version.id),
+        launcher_dir().join(&version.id),
         version.id.clone(),
         lyceris::auth::AuthMethod::Microsoft {
             username: account.username,

@@ -5,10 +5,10 @@ use tauri::{command, AppHandle, Emitter, Manager, Url};
 
 use lyceris::auth::microsoft::{authenticate, create_link, refresh, validate, MinecraftAccount};
 
-use crate::launcher::LAUNCHER_DIR;
+use crate::launcher::launcher_dir;
 
 fn accounts_path() -> PathBuf {
-    LAUNCHER_DIR.data_dir().join("accounts.json")
+    launcher_dir().join("accounts.json")
 }
 
 fn load_accounts() -> Vec<MinecraftAccount> {
@@ -52,30 +52,31 @@ pub fn auth_create_link(app: AppHandle) -> Result<String, String> {
 
     std::thread::spawn(move || {
         tauri::WebviewWindowBuilder::new(&app, "auth", tauri::WebviewUrl::External(url))
-        .title("Microsoft Login")
-        .inner_size(500.0, 700.0)
-        .resizable(false)
-        .on_navigation(move |nav_url| {
-            let url_str = nav_url.to_string();
+            .title("Microsoft Login")
+            .inner_size(500.0, 700.0)
+            .resizable(false)
+            .on_navigation(move |nav_url| {
+                let url_str = nav_url.to_string();
 
-            // Check for auth code
-            if url_str.contains("code=") {
-                if let Some(code) = extract_code(&url_str) {
-                    println!("Auth code received: {}", code);
+                // Check for auth code
+                if url_str.contains("code=") {
+                    if let Some(code) = extract_code(&url_str) {
+                        println!("Auth code received: {}", code);
 
-                    let _ = app_handle.emit("auth-code", code);
+                        let _ = app_handle.emit("auth-code", code);
 
-                    if let Some(win) = app_handle.get_webview_window("auth") {
-                        let _ = win.close();
+                        if let Some(win) = app_handle.get_webview_window("auth") {
+                            let _ = win.close();
+                        }
                     }
                 }
-            }
 
-            // Always allow navigation
-            true
-        })
-        .build()
-        .map_err(|e| e.to_string()).unwrap();
+                // Always allow navigation
+                true
+            })
+            .build()
+            .map_err(|e| e.to_string())
+            .unwrap();
     });
 
     Ok(link)
