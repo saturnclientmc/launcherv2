@@ -111,7 +111,11 @@ pub async fn remove_mod(version: String, file_name: String) -> Result<(), String
     let mods_dir: PathBuf = LAUNCHER_DIR.data_dir().join(&version).join("mods");
 
     // File to remove
-    let source = mods_dir.join(&file_name);
+    let mut source = mods_dir.join(&file_name);
+
+    if !source.exists() {
+        source = mods_dir.join("disabled_mods").join(&file_name);
+    }
 
     if !source.exists() {
         return Err(format!("Mod file not found: {}", file_name));
