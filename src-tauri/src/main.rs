@@ -20,6 +20,7 @@ fn main() {
             saturn_launcher_lib::commands::update_settings,
             saturn_launcher_lib::commands::get_version,
             saturn_launcher_lib::commands::update_version,
+            saturn_launcher_lib::commands::install_paths,
             // Launcher Commands
             saturn_launcher_lib::launcher::launch_game,
             // Auth Commands

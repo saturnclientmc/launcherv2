@@ -290,11 +290,11 @@ pub fn update_version(state: State<SharedState>, version: String) {
 
 #[tauri::command]
 pub async fn install_paths(
-    app: &AppHandle,
-    state: &SharedState,
-    paths: &Vec<String>,
+    app: AppHandle,
+    state: State<'_, SharedState>,
+    paths: Vec<String>,
 ) -> Result<(), String> {
-    for path in paths {
+    for path in &paths {
         let file = Path::new(&path)
             .file_name()
             .and_then(|name| name.to_str())
