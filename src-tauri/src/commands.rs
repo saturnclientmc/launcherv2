@@ -106,6 +106,26 @@ fn fallback_mod(file_name: &str, enabled: bool) -> Mod {
 }
 
 #[tauri::command]
+pub async fn remove_mod(version: String, file_name: String) -> Result<(), String> {
+    // mods folder
+    let mods_dir: PathBuf = LAUNCHER_DIR.data_dir().join(&version).join("mods");
+
+    // File to remove
+    let source = mods_dir.join(&file_name);
+
+    if !source.exists() {
+        return Err(format!("Mod file not found: {}", file_name));
+    }
+
+    // move file
+    fs::remove_file(&source)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn disable_mod(version: String, file_name: String) -> Result<(), String> {
     // mods folder
     let mods_dir: PathBuf = LAUNCHER_DIR.data_dir().join(&version).join("mods");

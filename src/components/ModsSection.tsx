@@ -14,6 +14,7 @@ import {
   enableMod,
   installMod,
   disableMod,
+  removeMod,
 } from "@/lib/saturn";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -46,6 +47,10 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
     if (activeTab === "installed") {
       const m = await getInstalledMods(version.id);
       setMods(m);
+      if (activeTab === "installed") {
+        // Fix: If discover mods takes too long and the user switches tabs it glitches
+        setMods(m);
+      }
     } else {
       const m = await discoverMods(searchQuery);
       if (activeTab === "discover") {
@@ -71,6 +76,11 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
     const m = await getInstalledMods(version.id);
     setMods(m);
   };
+
+  const handleRemove = async (modId: string) => {
+    await removeMod(version.id, modId);
+    loadMods();
+  }
 
   const openInstallDialog = (mod: Mod) => {
     setSelectedModForInstall(mod);
@@ -200,7 +210,7 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
                       )}
                       {mod.enabled ? "Enabled" : "Disabled"}
                     </button>
-                    <button className="p-2 text-saturn-text-secondary hover:text-red-400 transition-colors">
+                    <button className="p-2 text-saturn-text-secondary hover:text-red-400 transition-colors" onClick={() => handleRemove(mod.id)}>
                       <Trash2 size={16} />
                     </button>
                   </>

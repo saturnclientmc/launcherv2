@@ -17,6 +17,13 @@ export async function disableMod(
   await invoke("disable_mod", { version, fileName: modId });
 }
 
+export async function removeMod(
+  version: string,
+  modId: string,
+): Promise<void> {
+  await invoke("remove_mod", { version, fileName: modId });
+}
+
 export async function discoverMods(query: string): Promise<Mod[]> {
   const url = new URL("https://api.modrinth.com/v2/search");
 
