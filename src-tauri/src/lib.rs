@@ -102,33 +102,3 @@ pub fn save_state(state: &SharedState) {
     }
 }
 
-pub fn install_paths(state: &SharedState, paths: &Vec<PathBuf>) {
-    for path in paths {
-        if path.is_file() {
-            let file = path.file_name().unwrap_or_default().to_str().unwrap_or_default();
-
-            if file.is_empty() {
-                println!("Error: Unable to obtain file");
-                continue;
-            }
-
-            let version_dir = LAUNCHER_DIR.data_dir().join(&state.lock().unwrap().version);
-
-            let mc_child = match path.extension().unwrap_or_default().to_str().unwrap_or_default() {
-                // Mod
-                "jar" => Some("mods"),
-                // Etc (won't install)
-                _ => None
-            };
-
-            if let Some(mc_child) = mc_child {
-                match fs::copy(path, version_dir.join(mc_child).join(file)) {
-                    Ok(_) => {}
-                    Err(e) => {
-                        println!("Error: failed to copy mod {file:?}: {e}")
-                    }
-                }
-            }
-        }
-    }
-}

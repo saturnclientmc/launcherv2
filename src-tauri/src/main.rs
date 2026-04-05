@@ -1,8 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use saturn_launcher_lib::{SharedState, install_paths, load_state};
-use tauri::{Manager, WindowEvent};
+use saturn_launcher_lib::load_state;
+use tauri::{Emitter, Manager, WindowEvent};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 fn main() {
@@ -30,19 +30,35 @@ fn main() {
             saturn_launcher_lib::launcher::auth::auth_remove,
             saturn_launcher_lib::launcher::auth::auth_validate,
             saturn_launcher_lib::launcher::auth::auth_get_valid
-        ]).setup(|app| {
+        ])
+        .setup(|app| {
             match app.get_webview_window("main") {
                 Some(window) => {
-                    let state = app.state::<SharedState>().inner().clone();
+                    let handle = app.handle().clone();
 
                     window.on_window_event(move |event| {
                         if let WindowEvent::DragDrop(file_event) = event {
-                            match file_event {
-                                tauri::DragDropEvent::Drop{paths, ..} => {
-                                    println!("Installing files: {:?}", paths);
-                                    install_paths(&state, paths);
+                            if let tauri::DragDropEvent::Drop { paths, .. } = file_event {
+                                println!("Installing files: {:?}", paths);
+
+                                if handle
+                                    .emit(
+                                        "install-paths",
+                                        paths
+                                            .iter()
+                                            .filter_map(|p| {
+                                                if p.is_file() {
+                                                    Some(p.to_str()?.to_string())
+                                                } else {
+                                                    None
+                                                }
+                                            })
+                                            .collect::<Vec<_>>(),
+                                    )
+                                    .is_err()
+                                {
+                                    println!("Failed emitting files to frontend");
                                 }
-                                _ => {}
                             }
                         }
                     });

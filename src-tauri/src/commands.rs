@@ -1,7 +1,7 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use serde::Deserialize;
-use tauri::State;
+use tauri::{AppHandle, Emitter, State};
 use tokio::fs;
 
 use crate::{launcher::LAUNCHER_DIR, save_state, LauncherSettings, Mod, SharedState};
@@ -118,9 +118,7 @@ pub async fn remove_mod(version: String, file_name: String) -> Result<(), String
     }
 
     // move file
-    fs::remove_file(&source)
-        .await
-        .map_err(|e| e.to_string())?;
+    fs::remove_file(&source).await.map_err(|e| e.to_string())?;
 
     Ok(())
 }
@@ -288,4 +286,45 @@ pub fn update_version(state: State<SharedState>, version: String) {
     }
 
     save_state(&state);
+}
+
+#[tauri::command]
+pub async fn install_paths(
+    app: &AppHandle,
+    state: &SharedState,
+    paths: &Vec<String>,
+) -> Result<(), String> {
+    for path in paths {
+        let file = Path::new(&path)
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or_default();
+
+        if file.is_empty() {
+            println!("Error: Unable to obtain file");
+            continue;
+        }
+
+        let version_dir = LAUNCHER_DIR.data_dir().join(&state.lock().unwrap().version);
+
+        let mc_child = if path.ends_with(".jar") {
+            Some("mods")
+        } else {
+            None
+        };
+
+        if let Some(mc_child) = mc_child {
+            match fs::copy(path, version_dir.join(mc_child).join(file)).await {
+                Ok(_) => {
+                    app.emit("path-installed", path.to_string())
+                        .map_err(|e| e.to_string())?;
+                }
+                Err(e) => {
+                    println!("Error: failed to copy mod {file:?}: {e}")
+                }
+            }
+        }
+    }
+
+    Ok(())
 }

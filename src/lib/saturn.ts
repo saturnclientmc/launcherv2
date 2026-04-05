@@ -80,3 +80,7 @@ export async function getVersion(): Promise<string> {
 export async function updateVersion(version: string): Promise<void> {
   await invoke("update_version", { version });
 }
+
+export async function installPaths(version: string, paths: string[]): Promise<void> {
+  await invoke("install_paths", { version, paths });
+}
