@@ -16,7 +16,8 @@
         "width": 1000,
         "height": 650,
         "backgroundColor": "#0a0a0a",
-        "visible": false
+        "visible": false,
+        "dragDropEnabled": true
       }
     ],
     "security": {
