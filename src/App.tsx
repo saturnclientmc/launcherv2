@@ -82,7 +82,7 @@ export default function App() {
         toast.promise(installPaths(version, [path]), {
           loading: `${fileName}`,
           success: `${fileName}`,
-          error: `${fileName} Failed`
+          error: (e) => `${fileName} Failed: ${e}`
         }).catch(console.error);
       });
     });

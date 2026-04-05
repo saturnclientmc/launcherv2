@@ -298,32 +298,22 @@ pub async fn install_paths(
         let file = Path::new(&path)
             .file_name()
             .and_then(|name| name.to_str())
-            .unwrap_or_default();
-
-        if file.is_empty() {
-            println!("Error: Unable to obtain file");
-            continue;
-        }
+            .ok_or_else(|| String::from("File name not found"))?;
 
         let version_dir = LAUNCHER_DIR.data_dir().join(&state.lock().unwrap().version);
 
         let mc_child = if path.ends_with(".jar") {
-            Some("mods")
+            "mods"
         } else {
-            None
+            return Err(String::from("Invalid file type"));
         };
 
-        if let Some(mc_child) = mc_child {
-            match fs::copy(path, version_dir.join(mc_child).join(file)).await {
-                Ok(_) => {
-                    app.emit("path-installed", path.to_string())
-                        .map_err(|e| e.to_string())?;
-                }
-                Err(e) => {
-                    println!("Error: failed to copy mod {file:?}: {e}")
-                }
-            }
-        }
+        fs::copy(path, version_dir.join(mc_child).join(file))
+            .await
+            .map_err(|e| e.to_string())?;
+
+        app.emit("path-installed", path.to_string())
+            .map_err(|e| e.to_string())?;
     }
 
     Ok(())
