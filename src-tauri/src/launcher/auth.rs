@@ -50,7 +50,8 @@ pub fn auth_create_link(app: AppHandle) -> Result<String, String> {
 
     let app_handle = app.clone();
 
-    tauri::WebviewWindowBuilder::new(&app, "auth", tauri::WebviewUrl::External(url))
+    std::thread::spawn(move || {
+        tauri::WebviewWindowBuilder::new(&app, "auth", tauri::WebviewUrl::External(url))
         .title("Microsoft Login")
         .inner_size(500.0, 700.0)
         .resizable(false)
@@ -74,7 +75,8 @@ pub fn auth_create_link(app: AppHandle) -> Result<String, String> {
             true
         })
         .build()
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| e.to_string()).unwrap();
+    });
 
     Ok(link)
 }

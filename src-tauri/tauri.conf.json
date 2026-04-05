@@ -14,7 +14,9 @@
       {
         "title": "saturn-launcher",
         "width": 1000,
-        "height": 650
+        "height": 650,
+        "backgroundColor": "#0a0a0a",
+        "visible": false
       }
     ],
     "security": {
