@@ -8,6 +8,7 @@ import { versions } from "./lib/launcher";
 import { GameVersion } from "./lib/types";
 import { MinecraftAccount } from "./lib/auth";
 import { getVersion, updateVersion } from "./lib/saturn";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 type Section = "play" | "mods" | "settings";
 
@@ -60,6 +61,12 @@ export default function App() {
   useEffect(() => {
     if (selectedVersion?.id) updateVersion(selectedVersion?.id);
   }, [selectedVersion]);
+
+  useEffect(() => {
+    const window = getCurrentWindow();
+
+    window.show();
+  }, []);
 
   return (
     <div className="flex h-screen">
