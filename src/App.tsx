@@ -7,8 +7,10 @@ import SettingsSection from "./components/SettingsSection";
 import { versions } from "./lib/launcher";
 import { GameVersion } from "./lib/types";
 import { MinecraftAccount } from "./lib/auth";
-import { getVersion, updateVersion } from "./lib/saturn";
+import { getVersion, installPaths, updateVersion } from "./lib/saturn";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { listen } from "@tauri-apps/api/event";
+import toast, { Toaster } from "react-hot-toast";
 
 type Section = "play" | "mods" | "settings";
 
@@ -68,37 +70,82 @@ export default function App() {
     window.show();
   }, []);
 
+  useEffect(() => {
+    if (!selectedVersion?.id) return;
+
+    const version = selectedVersion?.id;
+
+    const unlistenInstalls = listen<string[]>("install-paths", (event) => {
+      event.payload.forEach((path) => {
+        const fileName = path.split(/[\\/]/).pop();
+
+        toast.promise(installPaths(version, [path]), {
+          loading: `${fileName}`,
+          success: `${fileName}`,
+          error: (e) => `${fileName} Failed: ${e}`
+        }).catch(console.error);
+      });
+    });
+
+    return () => {
+      unlistenInstalls.then((f) => f());
+    };
+  }, [selectedVersion]);
+
   return (
-    <div className="flex h-screen">
-      <Sidebar active={active} setActive={setActive} />
+    <>
+      <Toaster position="bottom-right" toastOptions={{
+        loading: {
+          style: {
+            backgroundColor: 'var(--color-saturn-panel)',
+            color: 'var(--color-saturn-text-primary)'
+          }
+        },
+        success: {
+          style: {
+            backgroundColor: 'var(--color-saturn-panel)',
+            color: 'var(--color-saturn-text-primary)'
+          }
+        },
+        error: {
+          style: {
+            backgroundColor: 'var(--color-saturn-panel)',
+            color: 'var(--color-saturn-text-primary)'
+          }
+        }
+      }} />
 
-      <main className="flex-1 flex flex-col">
-        <TopBar
-          versions={versions}
-          selectedVersion={selectedVersion}
-          setSelectedVersion={setSelectedVersion}
-          isVersionDropdownOpen={isVersionDropdownOpen}
-          setIsVersionDropdownOpen={setIsVersionDropdownOpen}
-          isAccountDropdownOpen={isAccountDropdownOpen}
-          setIsAccountDropdownOpen={setIsAccountDropdownOpen}
-          versionRef={versionRef}
-          accountRef={accountRef}
-          accounts={accounts}
-          setAccounts={setAccounts}
-          activeAccount={activeAccount}
-          setActiveAccount={setActiveAccount}
-        />
+      <div className="flex h-screen">
+        <Sidebar active={active} setActive={setActive} />
 
-        <div className="flex-1 p-8 overflow-y-scroll">
-          {active === "play" && (
-            <PlaySection version={selectedVersion} account={activeAccount} />
-          )}
-          {active === "mods" && selectedVersion && (
-            <ModsSection version={selectedVersion} />
-          )}
-          {active === "settings" && <SettingsSection />}
-        </div>
-      </main>
-    </div>
+        <main className="flex-1 flex flex-col">
+          <TopBar
+            versions={versions}
+            selectedVersion={selectedVersion}
+            setSelectedVersion={setSelectedVersion}
+            isVersionDropdownOpen={isVersionDropdownOpen}
+            setIsVersionDropdownOpen={setIsVersionDropdownOpen}
+            isAccountDropdownOpen={isAccountDropdownOpen}
+            setIsAccountDropdownOpen={setIsAccountDropdownOpen}
+            versionRef={versionRef}
+            accountRef={accountRef}
+            accounts={accounts}
+            setAccounts={setAccounts}
+            activeAccount={activeAccount}
+            setActiveAccount={setActiveAccount}
+          />
+
+          <div className="flex-1 p-8 overflow-y-scroll">
+            {active === "play" && (
+              <PlaySection version={selectedVersion} account={activeAccount} />
+            )}
+            {active === "mods" && selectedVersion && (
+              <ModsSection version={selectedVersion} />
+            )}
+            {active === "settings" && <SettingsSection />}
+          </div>
+        </main>
+      </div>
+    </>
   );
 }

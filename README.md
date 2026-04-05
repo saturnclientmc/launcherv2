@@ -1,7 +1,27 @@
-# Tauri + React + Typescript
+<p align="center">
+  <img src="src/assets/logo.svg" alt="Saturn Launcher Logo" width="150px"/>
+</p>
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+<h1 align="center">Saturn Launcher</h1>
 
-## Recommended IDE Setup
+<p align="center">
+  A fast, modern, and customizable launcher built for performance and flexibility, built with Rust.
+</p>
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+---
+
+## ✨ Features
+
+- ⚡ **High Performance** – Optimized for speed and responsiveness
+- 🎨 **Modern UI** – Clean, minimal, and aesthetic interface
+- 🧩 **Modular Architecture** – Easily extend and maintain mods
+- 📦 **Efficient File Handling** – Smart installation and management system
+
+---
+
+## 🧱 Tech Stack
+
+- **Frontend:** React / TypeScript / TailwindCSS
+- **Backend:** Rust (Tauri)
+- **Build Tooling:** Vite
+

@@ -14,12 +14,14 @@ import {
   enableMod,
   installMod,
   disableMod,
+  removeMod,
 } from "@/lib/saturn";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { motion, AnimatePresence } from "framer-motion";
 import { GameVersion, Mod } from "@/lib/types";
 import { versions } from "@/lib/launcher";
+import toast from "react-hot-toast";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -46,6 +48,10 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
     if (activeTab === "installed") {
       const m = await getInstalledMods(version.id);
       setMods(m);
+      if (activeTab === "installed") {
+        // Fix: If discover mods takes too long and the user switches tabs it glitches
+        setMods(m);
+      }
     } else {
       const m = await discoverMods(searchQuery);
       if (activeTab === "discover") {
@@ -72,6 +78,11 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
     setMods(m);
   };
 
+  const handleRemove = async (modId: string) => {
+    await removeMod(version.id, modId);
+    loadMods();
+  }
+
   const openInstallDialog = (mod: Mod) => {
     setSelectedModForInstall(mod);
     setSelectedVersionsForInstall([version.id]);
@@ -80,12 +91,17 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
 
   const handleInstall = async () => {
     if (selectedModForInstall && selectedVersionsForInstall.length > 0) {
-      await installMod(selectedModForInstall, selectedVersionsForInstall);
       setIsInstallDialogOpen(false);
-      if (activeTab === "installed") {
-        const m = await getInstalledMods(version.id);
-        setMods(m);
-      }
+      toast.promise(installMod(selectedModForInstall, selectedVersionsForInstall), {
+        loading: `Installing mod: ${selectedModForInstall.name}`,
+        success: `Mod sucessfully installed: ${selectedModForInstall.name}`,
+        error: (e) => `${selectedModForInstall.name} Failed: ${e}`
+      }).then(async () => {
+        if (activeTab === "installed") {
+          const m = await getInstalledMods(version.id);
+          setMods(m);
+        }
+      }).catch(console.error);
     }
   };
 
@@ -170,7 +186,7 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
                 <div className="flex items-center gap-2">
                   <h3 className="font-bold text-sm truncate">{mod.name}</h3>
                   <span className="text-[10px] text-saturn-text-secondary font-medium px-1.5 py-0.5 rounded bg-white/5">
-                    v{mod.version}
+                    {mod.version}
                   </span>
                   <span className="text-[10px] text-saturn-text-secondary">
                     by {mod.author}
@@ -200,7 +216,7 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
                       )}
                       {mod.enabled ? "Enabled" : "Disabled"}
                     </button>
-                    <button className="p-2 text-saturn-text-secondary hover:text-red-400 transition-colors">
+                    <button className="p-2 text-saturn-text-secondary hover:text-red-400 transition-colors" onClick={() => handleRemove(mod.id)}>
                       <Trash2 size={16} />
                     </button>
                   </>
@@ -271,7 +287,7 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
                           ? "bg-saturn-accent/10 border-saturn-accent/50"
                           : "bg-white/5 border-transparent hover:border-white/10",
                         !isSupported &&
-                          "opacity-40 cursor-not-allowed grayscale",
+                        "opacity-40 cursor-not-allowed grayscale",
                       )}
                     >
                       <div className="flex items-center gap-3">

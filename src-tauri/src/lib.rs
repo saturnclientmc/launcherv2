@@ -2,11 +2,15 @@ pub mod commands;
 pub mod launcher;
 
 use serde::{Deserialize, Serialize};
-use std::{fs, path::PathBuf, sync::Mutex};
+use std::{
+    fs,
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
 
-use crate::launcher::LAUNCHER_DIR;
+use crate::launcher::launcher_dir;
 
-type SharedState = Mutex<AppState>;
+pub type SharedState = Arc<Mutex<AppState>>;
 
 // --- Types ---
 #[derive(Clone, Serialize, Deserialize)]
@@ -51,7 +55,7 @@ impl Default for AppState {
 
 // Helper to get config path
 fn config_path() -> PathBuf {
-    LAUNCHER_DIR.config_dir().join("launcher.json")
+    launcher_dir().join("launcher.json")
 }
 
 // --- Load ---
@@ -61,7 +65,7 @@ pub fn load_state() -> SharedState {
     if path.exists() {
         match fs::read_to_string(&path) {
             Ok(content) => match serde_json::from_str::<AppState>(&content) {
-                Ok(state) => return Mutex::new(state),
+                Ok(state) => return Arc::new(Mutex::new(state)),
                 Err(err) => {
                     eprintln!("Failed to parse config, using default: {err}");
                 }
@@ -73,7 +77,7 @@ pub fn load_state() -> SharedState {
     }
 
     // If missing or failed → create default
-    let default = Mutex::new(AppState::default());
+    let default = Arc::new(Mutex::new(AppState::default()));
     save_state(&default);
 
     default

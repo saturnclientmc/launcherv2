@@ -45,9 +45,9 @@ const SettingsSection: React.FC = () => {
     <div className="max-w-4xl mx-auto h-full flex flex-col gap-8">
       <div className="flex items-center justify-between border-b border-saturn-border pb-6">
         <div>
-          <h1 className="text-2xl font-bold">Performance Settings</h1>
+          <h1 className="text-2xl font-bold">Settings</h1>
           <p className="text-sm text-saturn-text-secondary">
-            Configure how Saturn Client interacts with your hardware.
+            Configure how Saturn Launcher launches your game
           </p>
         </div>
         <div className="flex items-center gap-3">

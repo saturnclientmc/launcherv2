@@ -1,5 +1,5 @@
 import { Play, Puzzle, Settings } from "lucide-react";
-import Logo from "@/assets/logo.png";
+import Logo from "@/assets/logo_no_bg.png";
 import { cn } from "@/lib/utils";
 
 export default function Sidebar({ active, setActive }: any) {
