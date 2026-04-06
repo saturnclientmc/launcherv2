@@ -61,7 +61,7 @@ pub fn auth_create_link(app: AppHandle) -> Result<String, String> {
                 // Check for auth code
                 if url_str.contains("code=") {
                     if let Some(code) = extract_code(&url_str) {
-                        println!("Auth code received: {}", code);
+                        println!("Auth code received: {} ({})", &code[0..5], code.len());
 
                         let _ = app_handle.emit("auth-code", code);
 
