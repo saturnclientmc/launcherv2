@@ -125,8 +125,11 @@ pub async fn auth_refresh(uuid: String) -> Result<MinecraftAccount, String> {
 }
 
 #[command]
-pub fn auth_list() -> Result<Vec<MinecraftAccount>, String> {
-    Ok(load_accounts())
+pub fn auth_list() -> Result<Vec<(String, String)>, String> {
+    Ok(load_accounts()
+        .iter()
+        .map(|account| (account.uuid.clone(), account.username.clone()))
+        .collect())
 }
 
 #[command]

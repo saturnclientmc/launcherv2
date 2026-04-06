@@ -1,4 +1,3 @@
-import { MinecraftAccount } from "@/lib/auth";
 import { GameVersion } from "@/lib/types";
 
 export type SetState<T> = React.Dispatch<React.SetStateAction<T>>;
@@ -17,9 +16,9 @@ export interface Props {
   versionRef: React.RefObject<HTMLDivElement | null>;
   accountRef: React.RefObject<HTMLDivElement | null>;
 
-  accounts: MinecraftAccount[];
-  setAccounts: SetState<MinecraftAccount[]>;
+  accounts: [string, string][];
+  setAccounts: SetState<[string, string][]>;
 
-  activeAccount: MinecraftAccount | null;
-  setActiveAccount: SetState<MinecraftAccount | null>;
+  activeAccount: [string, string] | null;
+  setActiveAccount: SetState<[string, string] | null>;
 }

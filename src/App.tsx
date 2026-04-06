@@ -6,7 +6,6 @@ import ModsSection from "./components/ModsSection";
 import SettingsSection from "./components/SettingsSection";
 import { versions } from "./lib/launcher";
 import { GameVersion } from "./lib/types";
-import { MinecraftAccount } from "./lib/auth";
 import { getVersion, installPaths, updateVersion } from "./lib/saturn";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { listen } from "@tauri-apps/api/event";
@@ -26,8 +25,8 @@ export default function App() {
   const versionRef = useRef<HTMLDivElement | null>(null);
   const accountRef = useRef<HTMLDivElement | null>(null);
 
-  const [accounts, setAccounts] = useState<MinecraftAccount[]>([]);
-  const [activeAccount, setActiveAccount] = useState<MinecraftAccount | null>(
+  const [accounts, setAccounts] = useState<[string, string][]>([]);
+  const [activeAccount, setActiveAccount] = useState<[string, string] | null>(
     null,
   );
 
@@ -137,7 +136,7 @@ export default function App() {
 
           <div className="flex-1 p-8 overflow-y-scroll">
             {active === "play" && (
-              <PlaySection version={selectedVersion} account={activeAccount} />
+              <PlaySection version={selectedVersion} activeAccount={activeAccount} setActiveAccount={setActiveAccount} accounts={accounts} setAccounts={setAccounts} />
             )}
             {active === "mods" && selectedVersion && (
               <ModsSection version={selectedVersion} />
