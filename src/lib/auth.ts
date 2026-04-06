@@ -33,8 +33,9 @@ export async function authRefresh(uuid: string): Promise<MinecraftAccount> {
 
 /**
  * Get all stored accounts
+ * Format [UUID, Username]
  */
-export async function authList(): Promise<MinecraftAccount[]> {
+export async function authList(): Promise<[string, string][]> {
   return await invoke("auth_list");
 }
 

@@ -1,4 +1,5 @@
 pub mod commands;
+pub mod features;
 pub mod launcher;
 
 use serde::{Deserialize, Serialize};
@@ -8,7 +9,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::launcher::launcher_dir;
+use crate::{features::FeatureSettings, launcher::launcher_dir};
 
 pub type SharedState = Arc<Mutex<AppState>>;
 
@@ -35,6 +36,7 @@ pub struct GameVersion {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct LauncherSettings {
     pub max_memory: u32,
+    pub features: FeatureSettings,
 }
 
 // --- App State ---
@@ -47,7 +49,10 @@ pub struct AppState {
 impl Default for AppState {
     fn default() -> Self {
         Self {
-            settings: LauncherSettings { max_memory: 4096 },
+            settings: LauncherSettings {
+                max_memory: 2048,
+                features: FeatureSettings::default(),
+            },
             version: String::from("1.21.6"),
         }
     }

@@ -1,19 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { Play, Loader2 } from "lucide-react";
-// import { launchGame } from "../services/SaturnApi";
 import Bg from "@/assets/bg.png";
 import { listen } from "@tauri-apps/api/event";
 import { GameVersion } from "@/lib/types";
 import { launch } from "@/lib/launcher";
-import { MinecraftAccount } from "@/lib/auth";
+import { authGetValid } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { SetState } from "./layout/props";
 
 interface PlaySectionProps {
   version: GameVersion | null;
-  account: MinecraftAccount | null;
+  activeAccount: [string, string] | null;
+  setActiveAccount: SetState<[string, string] | null>,
+  accounts: [string, string][],
+  setAccounts: SetState<[string, string][]>,
 }
 
-const PlaySection: React.FC<PlaySectionProps> = ({ version, account }) => {
+const PlaySection: React.FC<PlaySectionProps> = ({ version, activeAccount: account }) => {
   const [isLaunching, setIsLaunching] = useState(false);
   const [launchStatus, setLaunchStatus] = useState("");
   const [progress, setProgress] = useState(0);
@@ -39,6 +42,13 @@ const PlaySection: React.FC<PlaySectionProps> = ({ version, account }) => {
     };
   }, []);
 
+  const handleLaunch = async () => {
+    if (version && account) {
+      const validAccount = await authGetValid(account[0]);
+      launch(version, validAccount);
+    }
+  }
+
   return (
     <div className="h-full relative">
       {/* Background Image */}
@@ -54,12 +64,12 @@ const PlaySection: React.FC<PlaySectionProps> = ({ version, account }) => {
           <div className="absolute -inset-1 bg-linear-to-r from-blue-600 to-cyan-500 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
 
           <button
-            onClick={() => version && account && launch(version, account)}
+            onClick={handleLaunch}
             disabled={isLaunching || !version || !account}
             className={cn(
               "relative btn-primary px-16 py-4 text-xl flex items-center gap-3 min-w-60 justify-center",
               (isLaunching || !version || !account) &&
-                "cursor-not-allowed opacity-70",
+              "cursor-not-allowed opacity-70",
             )}
           >
             {isLaunching ? (

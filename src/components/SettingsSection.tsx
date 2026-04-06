@@ -1,8 +1,193 @@
 import React, { useState, useEffect } from "react";
-import { MemoryStick, Save, RefreshCcw, Info } from "lucide-react";
+import { Save, RefreshCcw } from "lucide-react";
 import { getSettings, updateSettings } from "../lib/saturn";
-import { motion } from "framer-motion";
 import { LauncherSettings } from "@/lib/types";
+
+export type SettingSchemaItem =
+  | SettingSchemaLeaf
+  | SettingSchemaGroup;
+
+export interface SettingSchemaBase {
+  label: string;
+  description?: string;
+}
+
+export interface SettingSchemaLeaf extends SettingSchemaBase {
+  type: "slider" | "toggle" | "input";
+
+  key: string; // leaf key (resolved in context)
+  default: any;
+
+  min?: number;
+  max?: number;
+  step?: number;
+  format?: (value: any) => string;
+  ticks?: number[];
+  info?: string;
+}
+
+export interface SettingSchemaGroup extends SettingSchemaBase {
+  type: "group";
+  children: SettingSchemaItem[];
+}
+
+export const settingsSchema: SettingSchemaItem[] = [
+  {
+    type: "group",
+    label: "Performance",
+
+    children: [
+      {
+        key: "max_memory",
+        label: "Maximum Memory (RAM)",
+        type: "slider",
+        min: 1024,
+        max: 16384,
+        step: 512,
+        default: 2048,
+        ticks: [1024, 4096, 8192, 12288, 16384],
+
+        format: (v) => `${(v / 1024).toFixed(1)} GB`,
+      },
+    ],
+  },
+
+  {
+    type: "group",
+    label: "Features",
+
+    children: [
+      {
+        key: "features.sync_options",
+        label: "Sync options.txt",
+        type: "toggle",
+        default: true,
+      },
+    ],
+  },
+];
+
+const getValue = (obj: any, path: string) =>
+  path.split(".").reduce((acc, key) => acc?.[key], obj);
+
+const setValue = (obj: any, path: string, value: any) => {
+  const keys = path.split(".");
+  const last = keys.pop()!;
+  const clone = structuredClone(obj);
+
+  let current = clone;
+  for (const key of keys) current = current[key];
+
+  current[last] = value;
+  return clone;
+};
+
+const SettingItem: React.FC<{
+  item: SettingSchemaItem;
+  settings: LauncherSettings;
+  setSettings: React.Dispatch<
+    React.SetStateAction<LauncherSettings | null>
+  >;
+}> = ({ item, settings, setSettings }) => {
+  if (item.type === "group") {
+    return (
+      <div className="space-y-4 border-l border-saturn-border pl-4">
+        <div className="text-sm font-semibold text-saturn-text-secondary">
+          {item.label}
+        </div>
+
+        {item.children.map((child, i) => (
+          <SettingItem
+            key={i}
+            item={child}
+            settings={settings}
+            setSettings={setSettings}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  const value = getValue(settings, item.key);
+
+  return (
+    <div className="space-y-4">
+      {item.type === "slider" && (
+        <div>
+          <div className="flex justify-between mb-2">
+            <span className="text-md font-medium">{item.label}</span>
+            <span className="text-md font-medium text-saturn-accent">{(item.format && item.format(value)) || value}</span>
+          </div>
+          <input
+            type="range"
+            min={item.min}
+            max={item.max}
+            step={item.step}
+            value={value}
+            onChange={(e) =>
+              setSettings((prev) =>
+                prev
+                  ? setValue(prev, item.key, parseInt(e.target.value))
+                  : prev
+              )
+            }
+            className="w-full h-2 bg-saturn-border rounded-lg appearance-none cursor-pointer accent-saturn-accent"
+          />
+          {item.ticks && (
+            <div className="relative w-full mt-2 h-6">
+              {item.ticks.map((tick) => {
+                const percent =
+                  (((tick - item.min!) / (item.max! - item.min!)) * 100 - 50) *
+                  0.97 +
+                  50;
+
+                return (
+                  <span
+                    key={tick}
+                    className="absolute text-[10px] text-saturn-text-secondary font-bold uppercase tracking-widest -translate-x-1/2 whitespace-nowrap"
+                    style={{ left: `${percent}%` }}
+                  >
+                    {tick / 1024} GB
+                  </span>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {item.type === "toggle" && (
+        <div className="flex gap-2 items-center" key={item.key}>
+          <input
+            className="appearance-none w-4 h-4 bg-saturn-panel border border-saturn-border rounded checked:bg-saturn-accent"
+            type="checkbox"
+            checked={value}
+            onChange={(e) =>
+              setSettings((prev) =>
+                prev ? setValue(prev, item.key, e.target.checked) : prev
+              )
+            }
+          />
+          <span className="text-sm font-medium">{item.label}</span>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const buildDefaultSettings = (schema: SettingSchemaItem[]): any => {
+  const result: any = {};
+
+  for (const item of schema) {
+    if (item.type === "group") {
+      Object.assign(result, buildDefaultSettings(item.children));
+    } else {
+      result[item.key] = item.default;
+    }
+  }
+
+  return result;
+};
 
 const SettingsSection: React.FC = () => {
   const [settings, setSettings] = useState<LauncherSettings | null>(null);
@@ -32,11 +217,7 @@ const SettingsSection: React.FC = () => {
   };
 
   const handleReset = async () => {
-    // In a real app, this would reset to defaults in the service
-    const defaultSettings: LauncherSettings = {
-      max_memory: 4096,
-    };
-    setSettings(defaultSettings);
+    setSettings(buildDefaultSettings(settingsSchema) as LauncherSettings);
   };
 
   if (!settings) return null;
@@ -70,69 +251,7 @@ const SettingsSection: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-8">
-        {/* Memory Allocation */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="panel p-6 space-y-6"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-saturn-accent/10 flex items-center justify-center text-saturn-accent">
-              <MemoryStick size={18} />
-            </div>
-            <h2 className="text-lg font-bold">Memory Allocation</h2>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium">Maximum Memory (RAM)</span>
-              <span className="text-lg font-bold text-saturn-accent">
-                {(settings.max_memory / 1024).toFixed(1)} GB
-              </span>
-            </div>
-
-            <input
-              type="range"
-              min="1024"
-              max="16384"
-              step="512"
-              value={settings.max_memory}
-              onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  max_memory: parseInt(e.target.value),
-                })
-              }
-              className="w-full h-2 bg-saturn-border rounded-lg appearance-none cursor-pointer accent-saturn-accent"
-            />
-
-            <div className="relative w-full mt-2 h-6">
-              {[1024, 4096, 8192, 12288, 16384].map((value) => {
-                const percent =
-                  (((value - 1024) / (16384 - 1024)) * 100 - 50) * 0.97 + 50;
-
-                return (
-                  <span
-                    key={value}
-                    className="absolute text-[10px] text-saturn-text-secondary font-bold uppercase tracking-widest -translate-x-1/2 whitespace-nowrap"
-                    style={{ left: `${percent}%` }}
-                  >
-                    {value / 1024} GB
-                  </span>
-                );
-              })}
-            </div>
-
-            <div className="p-3 bg-blue-500/5 border border-blue-500/10 rounded-lg flex gap-3">
-              <Info size={16} className="text-blue-400 shrink-0 mt-0.5" />
-              <p className="text-xs text-blue-300/80 leading-relaxed">
-                Allocating too much memory can cause system instability, while
-                too little can lead to performance issues or crashes. 4GB - 8GB
-                is recommended for most users.
-              </p>
-            </div>
-          </div>
-        </motion.div>
+        {settingsSchema.map((item) => (<SettingItem item={item} settings={settings} setSettings={setSettings} />))}
       </div>
     </div>
   );

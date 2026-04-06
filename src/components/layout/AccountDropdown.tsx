@@ -7,7 +7,6 @@ import {
   authRemove,
   authCreateLink,
   authLogin,
-  MinecraftAccount,
 } from "@/lib/auth";
 import { listen } from "@tauri-apps/api/event";
 
@@ -64,7 +63,7 @@ export default function AccountDropdown({
   }
 
   // Switch account
-  function switchAccount(acc: MinecraftAccount) {
+  function switchAccount(acc: [string, string]) {
     setActiveAccount(acc);
     setIsAccountDropdownOpen(false);
   }
@@ -73,7 +72,7 @@ export default function AccountDropdown({
   async function logout() {
     if (!activeAccount) return;
 
-    await authRemove(activeAccount.uuid);
+    await authRemove(activeAccount[0]);
 
     const updated = await authList();
     setAccounts(updated);
@@ -91,7 +90,7 @@ export default function AccountDropdown({
     });
   }
 
-  const otherAccounts = accounts.filter((a) => a.uuid !== activeAccount?.uuid);
+  const otherAccounts = accounts.filter((a) => a[0] !== activeAccount?.[0]);
 
   return (
     <div ref={accountRef} className="relative group overflow-visible">
@@ -106,7 +105,7 @@ export default function AccountDropdown({
         <div className="absolute -top-2 left-4 group-hover:scale-110 transition-transform duration-700 w-12 overflow-hidden z-20">
           {activeAccount && (
             <img
-              src={`https://render.crafty.gg/3d/bust/${activeAccount.uuid}`}
+              src={`https://render.crafty.gg/3d/bust/${activeAccount[0]}`}
               className="w-full h-full object-cover"
             />
           )}
@@ -123,7 +122,7 @@ export default function AccountDropdown({
             Playing as
           </p>
           <p className="text-sm font-bold text-white">
-            {activeAccount?.username || "No Account"}
+            {activeAccount?.[1] || "No Account"}
           </p>
         </div>
       </button>
@@ -140,17 +139,17 @@ export default function AccountDropdown({
         {/* Current account */}
         {activeAccount && (
           <UserComponent
-            username={activeAccount.username}
-            uuid={activeAccount.uuid}
+            username={activeAccount[1]}
+            uuid={activeAccount[0]}
           />
         )}
 
         {/* Other accounts */}
         {otherAccounts.map((acc) => (
           <UserComponent
-            key={acc.uuid}
-            username={acc.username}
-            uuid={acc.uuid}
+            key={acc[0]}
+            username={acc[1]}
+            uuid={acc[0]}
             onClick={() => switchAccount(acc)}
           />
         ))}
