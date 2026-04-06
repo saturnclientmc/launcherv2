@@ -1,8 +1,45 @@
 import React, { useState, useEffect } from "react";
-import { MemoryStick, Save, RefreshCcw, Info } from "lucide-react";
+import { Save, RefreshCcw, Info } from "lucide-react";
 import { getSettings, updateSettings } from "../lib/saturn";
-import { motion } from "framer-motion";
 import { LauncherSettings } from "@/lib/types";
+
+export type SettingType = "slider" | "toggle" | "input";
+
+export interface SettingSchemaItem {
+  key: keyof LauncherSettings;
+  label: string;
+  description?: string;
+  type: SettingType;
+
+  // Slider-specific
+  min?: number;
+  max?: number;
+  step?: number;
+  format?: (value: any) => string;
+  ticks?: number[];
+  info?: string;
+
+  // Default value
+  default: any;
+}
+
+export const settingsSchema: SettingSchemaItem[] = [
+  {
+    key: "max_memory",
+    label: "Maximum Memory (RAM)",
+    type: "slider",
+    min: 1024,
+    max: 16384,
+    step: 512,
+    default: 2048,
+
+    format: (v) => `${(v / 1024).toFixed(1)} GB`,
+
+    ticks: [1024, 4096, 8192, 12288, 16384],
+
+    info: `Allocating too much memory can cause system instability, while too little can lead to performance issues or crashes. 2GB - 8GB is recommended for most users.`,
+  },
+];
 
 const SettingsSection: React.FC = () => {
   const [settings, setSettings] = useState<LauncherSettings | null>(null);
@@ -32,11 +69,7 @@ const SettingsSection: React.FC = () => {
   };
 
   const handleReset = async () => {
-    // In a real app, this would reset to defaults in the service
-    const defaultSettings: LauncherSettings = {
-      max_memory: 4096,
-    };
-    setSettings(defaultSettings);
+    setSettings(Object.fromEntries(settingsSchema.map((v) => [v.key, v.default])) as LauncherSettings);
   };
 
   if (!settings) return null;
@@ -70,69 +103,82 @@ const SettingsSection: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-8">
-        {/* Memory Allocation */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="panel p-6 space-y-6"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-saturn-accent/10 flex items-center justify-center text-saturn-accent">
-              <MemoryStick size={18} />
-            </div>
-            <h2 className="text-lg font-bold">Memory Allocation</h2>
-          </div>
+        {settingsSchema.map((item) => {
+          const value = settings[item.key];
 
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium">Maximum Memory (RAM)</span>
-              <span className="text-lg font-bold text-saturn-accent">
-                {(settings.max_memory / 1024).toFixed(1)} GB
-              </span>
-            </div>
-
-            <input
-              type="range"
-              min="1024"
-              max="16384"
-              step="512"
-              value={settings.max_memory}
-              onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  max_memory: parseInt(e.target.value),
-                })
-              }
-              className="w-full h-2 bg-saturn-border rounded-lg appearance-none cursor-pointer accent-saturn-accent"
-            />
-
-            <div className="relative w-full mt-2 h-6">
-              {[1024, 4096, 8192, 12288, 16384].map((value) => {
-                const percent =
-                  (((value - 1024) / (16384 - 1024)) * 100 - 50) * 0.97 + 50;
-
-                return (
-                  <span
-                    key={value}
-                    className="absolute text-[10px] text-saturn-text-secondary font-bold uppercase tracking-widest -translate-x-1/2 whitespace-nowrap"
-                    style={{ left: `${percent}%` }}
-                  >
-                    {value / 1024} GB
+          return (
+            <div key={String(item.key)} className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">{item.label}</span>
+                {item.format && (
+                  <span className="text-lg font-bold text-saturn-accent">
+                    {item.format(value)}
                   </span>
-                );
-              })}
-            </div>
+                )}
+              </div>
 
-            <div className="p-3 bg-blue-500/5 border border-blue-500/10 rounded-lg flex gap-3">
-              <Info size={16} className="text-blue-400 shrink-0 mt-0.5" />
-              <p className="text-xs text-blue-300/80 leading-relaxed">
-                Allocating too much memory can cause system instability, while
-                too little can lead to performance issues or crashes. 4GB - 8GB
-                is recommended for most users.
-              </p>
+              {item.type === "slider" && (
+                <>
+                  <input
+                    type="range"
+                    min={item.min}
+                    max={item.max}
+                    step={item.step}
+                    value={value}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        [item.key]: parseInt(e.target.value),
+                      })
+                    }
+                    className="w-full h-2 bg-saturn-border rounded-lg appearance-none cursor-pointer accent-saturn-accent"
+                  />
+
+                  {/* Tick labels */}
+                  {item.ticks && (
+                    <div className="relative w-full mt-2 h-6">
+                      {item.ticks.map((tick) => {
+                        const percent =
+                          (((tick - item.min!) / (item.max! - item.min!)) * 100 - 50) *
+                          0.97 +
+                          50;
+
+                        return (
+                          <span
+                            key={tick}
+                            className="absolute text-[10px] text-saturn-text-secondary font-bold uppercase tracking-widest -translate-x-1/2 whitespace-nowrap"
+                            style={{ left: `${percent}%` }}
+                          >
+                            {tick / 1024} GB
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Info box */}
+                  {item.info && (
+                    <div className="p-3 bg-blue-500/5 border border-blue-500/10 rounded-lg flex gap-3">
+                      <Info size={16} className="text-blue-400 shrink-0 mt-0.5" />
+                      <p className="text-xs text-blue-300/80 leading-relaxed">
+                        {item.info}
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {item.description && (
+                <div className="p-3 bg-blue-500/5 border border-blue-500/10 rounded-lg flex gap-3">
+                  <Info size={16} className="text-blue-400 shrink-0 mt-0.5" />
+                  <p className="text-xs text-blue-300/80 leading-relaxed">
+                    {item.description}
+                  </p>
+                </div>
+              )}
             </div>
-          </div>
-        </motion.div>
+          );
+        })}
       </div>
     </div>
   );
