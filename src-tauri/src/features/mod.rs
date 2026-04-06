@@ -1,4 +1,5 @@
 use lyceris::auth::microsoft::MinecraftAccount;
+use serde::{Deserialize, Serialize};
 use tauri::State;
 use tokio::sync::Mutex;
 
@@ -7,6 +8,20 @@ use crate::{features::instance_sync::InstanceSync, GameVersion, SharedState};
 mod instance_sync;
 
 pub type FeatureResult = Result<(), String>;
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct FeatureSettings {
+    // Instance Sync
+    sync_options: bool,
+}
+
+impl Default for FeatureSettings {
+    fn default() -> Self {
+        Self {
+            sync_options: false,
+        }
+    }
+}
 
 #[allow(unused_variables)]
 pub trait Feature: Send + Sync {
