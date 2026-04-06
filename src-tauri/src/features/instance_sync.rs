@@ -18,9 +18,11 @@ impl Feature for InstanceSync {
         &mut self,
         state: &State<'_, SharedState>,
         version: &GameVersion,
-        account: &MinecraftAccount,
+        _account: &MinecraftAccount,
     ) -> super::FeatureResult {
-        sync_to_instance(version).map_err(|e| e.to_string())?;
+        if state.lock().unwrap().settings.features.sync_options {
+            sync_to_instance(version).map_err(|e| e.to_string())?;
+        }
 
         Ok(())
     }
@@ -29,9 +31,11 @@ impl Feature for InstanceSync {
         &mut self,
         state: &State<'_, SharedState>,
         version: &GameVersion,
-        account: &MinecraftAccount,
+        _account: &MinecraftAccount,
     ) -> super::FeatureResult {
-        sync_back_from_instance(version).map_err(|e| e.to_string())?;
+        if state.lock().unwrap().settings.features.sync_options {
+            sync_back_from_instance(version).map_err(|e| e.to_string())?;
+        }
 
         Ok(())
     }

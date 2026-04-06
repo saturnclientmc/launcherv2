@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Save, RefreshCcw, Info } from "lucide-react";
+import { Save, RefreshCcw } from "lucide-react";
 import { getSettings, updateSettings } from "../lib/saturn";
 import { LauncherSettings } from "@/lib/types";
 
@@ -45,6 +45,7 @@ export const settingsSchema: SettingSchemaItem[] = [
         max: 16384,
         step: 512,
         default: 2048,
+        ticks: [1024, 4096, 8192, 12288, 16384],
 
         format: (v) => `${(v / 1024).toFixed(1)} GB`,
       },
@@ -112,8 +113,11 @@ const SettingItem: React.FC<{
   return (
     <div className="space-y-4">
       {item.type === "slider" && (
-        <>
-          <span className="text-sm font-medium">{item.label}</span>
+        <div>
+          <div className="flex justify-between">
+            <span className="text-sm font-medium">{item.label}</span>
+            <span className="text-sm font-medium">{(item.format && item.format(value)) || value}</span>
+          </div>
           <input
             type="range"
             min={item.min}
@@ -129,7 +133,27 @@ const SettingItem: React.FC<{
             }
             className="w-full"
           />
-        </>
+          {item.ticks && (
+            <div className="relative w-full mt-2 h-6">
+              {item.ticks.map((tick) => {
+                const percent =
+                  (((tick - item.min!) / (item.max! - item.min!)) * 100 - 50) *
+                  0.97 +
+                  50;
+
+                return (
+                  <span
+                    key={tick}
+                    className="absolute text-[10px] text-saturn-text-secondary font-bold uppercase tracking-widest -translate-x-1/2 whitespace-nowrap"
+                    style={{ left: `${percent}%` }}
+                  >
+                    {tick / 1024} GB
+                  </span>
+                );
+              })}
+            </div>
+          )}
+        </div>
       )}
 
       {item.type === "toggle" && (
