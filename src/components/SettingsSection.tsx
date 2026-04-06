@@ -114,9 +114,9 @@ const SettingItem: React.FC<{
     <div className="space-y-4">
       {item.type === "slider" && (
         <div>
-          <div className="flex justify-between">
-            <span className="text-sm font-medium">{item.label}</span>
-            <span className="text-sm font-medium">{(item.format && item.format(value)) || value}</span>
+          <div className="flex justify-between mb-2">
+            <span className="text-md font-medium">{item.label}</span>
+            <span className="text-md font-medium text-saturn-accent">{(item.format && item.format(value)) || value}</span>
           </div>
           <input
             type="range"
@@ -131,7 +131,7 @@ const SettingItem: React.FC<{
                   : prev
               )
             }
-            className="w-full"
+            className="w-full h-2 bg-saturn-border rounded-lg appearance-none cursor-pointer accent-saturn-accent"
           />
           {item.ticks && (
             <div className="relative w-full mt-2 h-6">
