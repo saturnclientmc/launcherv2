@@ -16,7 +16,7 @@ use lyceris::{
 
 use tauri::{Emitter as _, State};
 
-use crate::{GameVersion, SharedState};
+use crate::{features::FeatureState, GameVersion, SharedState};
 
 pub fn launcher_dir() -> PathBuf {
     if cfg!(target_os = "macos") {
@@ -47,6 +47,7 @@ pub fn launcher_dir() -> PathBuf {
 pub async fn launch_game(
     app: tauri::AppHandle,
     state: State<'_, SharedState>,
+    feature_state: State<'_, FeatureState>,
     version: GameVersion,
     account: MinecraftAccount,
 ) -> Result<(), String> {
@@ -95,14 +96,14 @@ pub async fn launch_game(
         launcher_dir().join(&version.id),
         version.id.clone(),
         lyceris::auth::AuthMethod::Microsoft {
-            username: account.username,
-            xuid: account.xuid,
-            uuid: account.uuid,
-            access_token: account.access_token,
-            refresh_token: account.refresh_token,
+            username: account.username.clone(),
+            xuid: account.xuid.clone(),
+            uuid: account.uuid.clone(),
+            access_token: account.access_token.clone(),
+            refresh_token: account.refresh_token.clone(),
         },
     )
-    .loader(Fabric(version.loader_version).into())
+    .loader(Fabric(version.loader_version.clone()).into())
     .memory(lyceris::minecraft::config::Memory::Megabyte(
         state.lock().unwrap().settings.max_memory as u64,
     ))
@@ -124,12 +125,19 @@ pub async fn launch_game(
 
     app.emit("launch-status", "Launching").unwrap();
 
+    feature_state.inner().launch(&version, &account).await?;
+
     launch(&config, Some(&emitter))
         .await
         .map_err(|e| e.to_string())?
         .wait()
         .await
         .map_err(|e| e.to_string())?;
+
+    feature_state
+        .inner()
+        .after_launch(&version, &account)
+        .await?;
 
     app.emit("is-launching", "false").unwrap();
     app.emit("launch-status", "").unwrap();

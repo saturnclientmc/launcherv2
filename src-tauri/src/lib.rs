@@ -1,4 +1,5 @@
 pub mod commands;
+pub mod features;
 pub mod launcher;
 
 use serde::{Deserialize, Serialize};
