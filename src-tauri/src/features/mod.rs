@@ -17,9 +17,7 @@ pub struct FeatureSettings {
 
 impl Default for FeatureSettings {
     fn default() -> Self {
-        Self {
-            sync_options: false,
-        }
+        Self { sync_options: true }
     }
 }
 

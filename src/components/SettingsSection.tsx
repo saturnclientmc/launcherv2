@@ -59,7 +59,7 @@ export const settingsSchema: SettingSchemaItem[] = [
     children: [
       {
         key: "features.sync_options",
-        label: "Sync Options",
+        label: "Sync options.txt",
         type: "toggle",
         default: true,
       },

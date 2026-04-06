@@ -50,7 +50,7 @@ impl Default for AppState {
     fn default() -> Self {
         Self {
             settings: LauncherSettings {
-                max_memory: 4096,
+                max_memory: 2048,
                 features: FeatureSettings::default(),
             },
             version: String::from("1.21.6"),
