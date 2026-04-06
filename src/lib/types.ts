@@ -17,4 +17,7 @@ export interface GameVersion {
 
 export interface LauncherSettings {
   max_memory: number;
+  features: {
+    sync_options: boolean
+  }
 }

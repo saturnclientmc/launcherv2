@@ -3,43 +3,167 @@ import { Save, RefreshCcw, Info } from "lucide-react";
 import { getSettings, updateSettings } from "../lib/saturn";
 import { LauncherSettings } from "@/lib/types";
 
-export type SettingType = "slider" | "toggle" | "input";
+export type SettingSchemaItem =
+  | SettingSchemaLeaf
+  | SettingSchemaGroup;
 
-export interface SettingSchemaItem {
-  key: keyof LauncherSettings;
+export interface SettingSchemaBase {
   label: string;
   description?: string;
-  type: SettingType;
+}
 
-  // Slider-specific
+export interface SettingSchemaLeaf extends SettingSchemaBase {
+  type: "slider" | "toggle" | "input";
+
+  key: string; // leaf key (resolved in context)
+  default: any;
+
   min?: number;
   max?: number;
   step?: number;
   format?: (value: any) => string;
   ticks?: number[];
   info?: string;
+}
 
-  // Default value
-  default: any;
+export interface SettingSchemaGroup extends SettingSchemaBase {
+  type: "group";
+  children: SettingSchemaItem[];
 }
 
 export const settingsSchema: SettingSchemaItem[] = [
   {
-    key: "max_memory",
-    label: "Maximum Memory (RAM)",
-    type: "slider",
-    min: 1024,
-    max: 16384,
-    step: 512,
-    default: 2048,
+    type: "group",
+    label: "Performance",
 
-    format: (v) => `${(v / 1024).toFixed(1)} GB`,
+    children: [
+      {
+        key: "max_memory",
+        label: "Maximum Memory (RAM)",
+        type: "slider",
+        min: 1024,
+        max: 16384,
+        step: 512,
+        default: 2048,
 
-    ticks: [1024, 4096, 8192, 12288, 16384],
+        format: (v) => `${(v / 1024).toFixed(1)} GB`,
+      },
+    ],
+  },
 
-    info: `Allocating too much memory can cause system instability, while too little can lead to performance issues or crashes. 2GB - 8GB is recommended for most users.`,
+  {
+    type: "group",
+    label: "Features",
+
+    children: [
+      {
+        key: "features.sync_options",
+        label: "Sync Options",
+        type: "toggle",
+        default: true,
+      },
+    ],
   },
 ];
+
+const getValue = (obj: any, path: string) =>
+  path.split(".").reduce((acc, key) => acc?.[key], obj);
+
+const setValue = (obj: any, path: string, value: any) => {
+  const keys = path.split(".");
+  const last = keys.pop()!;
+  const clone = structuredClone(obj);
+
+  let current = clone;
+  for (const key of keys) current = current[key];
+
+  current[last] = value;
+  return clone;
+};
+
+const SettingItem: React.FC<{
+  item: SettingSchemaItem;
+  settings: LauncherSettings;
+  setSettings: React.Dispatch<
+    React.SetStateAction<LauncherSettings | null>
+  >;
+}> = ({ item, settings, setSettings }) => {
+  if (item.type === "group") {
+    return (
+      <div className="space-y-4 border-l border-saturn-border pl-4">
+        <div className="text-sm font-semibold text-saturn-text-secondary">
+          {item.label}
+        </div>
+
+        {item.children.map((child, i) => (
+          <SettingItem
+            key={i}
+            item={child}
+            settings={settings}
+            setSettings={setSettings}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  const value = getValue(settings, item.key);
+
+  return (
+    <div className="space-y-4">
+      {item.type === "slider" && (
+        <>
+          <span className="text-sm font-medium">{item.label}</span>
+          <input
+            type="range"
+            min={item.min}
+            max={item.max}
+            step={item.step}
+            value={value}
+            onChange={(e) =>
+              setSettings((prev) =>
+                prev
+                  ? setValue(prev, item.key, parseInt(e.target.value))
+                  : prev
+              )
+            }
+            className="w-full"
+          />
+        </>
+      )}
+
+      {item.type === "toggle" && (
+        <div className="flex gap-2 items-center" key={item.key}>
+          <input
+            className="appearance-none w-4 h-4 bg-saturn-panel border border-saturn-border rounded checked:bg-saturn-accent"
+            type="checkbox"
+            checked={value}
+            onChange={(e) =>
+              setSettings((prev) =>
+                prev ? setValue(prev, item.key, e.target.checked) : prev
+              )
+            }
+          />
+          <span className="text-sm font-medium">{item.label}</span>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const buildDefaultSettings = (schema: SettingSchemaItem[]): any => {
+  const result: any = {};
+
+  for (const item of schema) {
+    if (item.type === "group") {
+      Object.assign(result, buildDefaultSettings(item.children));
+    } else {
+      result[item.key] = item.default;
+    }
+  }
+
+  return result;
+};
 
 const SettingsSection: React.FC = () => {
   const [settings, setSettings] = useState<LauncherSettings | null>(null);
@@ -69,7 +193,7 @@ const SettingsSection: React.FC = () => {
   };
 
   const handleReset = async () => {
-    setSettings(Object.fromEntries(settingsSchema.map((v) => [v.key, v.default])) as LauncherSettings);
+    setSettings(buildDefaultSettings(settingsSchema) as LauncherSettings);
   };
 
   if (!settings) return null;
@@ -103,82 +227,7 @@ const SettingsSection: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-8">
-        {settingsSchema.map((item) => {
-          const value = settings[item.key];
-
-          return (
-            <div key={String(item.key)} className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">{item.label}</span>
-                {item.format && (
-                  <span className="text-lg font-bold text-saturn-accent">
-                    {item.format(value)}
-                  </span>
-                )}
-              </div>
-
-              {item.type === "slider" && (
-                <>
-                  <input
-                    type="range"
-                    min={item.min}
-                    max={item.max}
-                    step={item.step}
-                    value={value}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        [item.key]: parseInt(e.target.value),
-                      })
-                    }
-                    className="w-full h-2 bg-saturn-border rounded-lg appearance-none cursor-pointer accent-saturn-accent"
-                  />
-
-                  {/* Tick labels */}
-                  {item.ticks && (
-                    <div className="relative w-full mt-2 h-6">
-                      {item.ticks.map((tick) => {
-                        const percent =
-                          (((tick - item.min!) / (item.max! - item.min!)) * 100 - 50) *
-                          0.97 +
-                          50;
-
-                        return (
-                          <span
-                            key={tick}
-                            className="absolute text-[10px] text-saturn-text-secondary font-bold uppercase tracking-widest -translate-x-1/2 whitespace-nowrap"
-                            style={{ left: `${percent}%` }}
-                          >
-                            {tick / 1024} GB
-                          </span>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Info box */}
-                  {item.info && (
-                    <div className="p-3 bg-blue-500/5 border border-blue-500/10 rounded-lg flex gap-3">
-                      <Info size={16} className="text-blue-400 shrink-0 mt-0.5" />
-                      <p className="text-xs text-blue-300/80 leading-relaxed">
-                        {item.info}
-                      </p>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {item.description && (
-                <div className="p-3 bg-blue-500/5 border border-blue-500/10 rounded-lg flex gap-3">
-                  <Info size={16} className="text-blue-400 shrink-0 mt-0.5" />
-                  <p className="text-xs text-blue-300/80 leading-relaxed">
-                    {item.description}
-                  </p>
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {settingsSchema.map((item) => (<SettingItem item={item} settings={settings} setSettings={setSettings} />))}
       </div>
     </div>
   );
