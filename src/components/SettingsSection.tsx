@@ -113,7 +113,7 @@ const SettingItem: React.FC<{
   return (
     <div className="space-y-4">
       {item.type === "slider" && (
-        <div>
+        <div key={item.key}>
           <div className="flex justify-between mb-2">
             <span className="text-md font-medium">{item.label}</span>
             <span className="text-md font-medium text-saturn-accent">{(item.format && item.format(value)) || value}</span>
@@ -175,6 +175,22 @@ const SettingItem: React.FC<{
   );
 };
 
+function setNestedValue(obj: any, path: string, value: any) {
+  const keys = path.split(".");
+  let current = obj;
+
+  keys.forEach((key, index) => {
+    if (index === keys.length - 1) {
+      current[key] = value;
+    } else {
+      if (!current[key] || typeof current[key] !== "object") {
+        current[key] = {};
+      }
+      current = current[key];
+    }
+  });
+}
+
 const buildDefaultSettings = (schema: SettingSchemaItem[]): any => {
   const result: any = {};
 
@@ -182,7 +198,7 @@ const buildDefaultSettings = (schema: SettingSchemaItem[]): any => {
     if (item.type === "group") {
       Object.assign(result, buildDefaultSettings(item.children));
     } else {
-      result[item.key] = item.default;
+      setNestedValue(result, item.key, item.default);
     }
   }
 
