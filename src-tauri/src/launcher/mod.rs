@@ -125,7 +125,10 @@ pub async fn launch_game(
 
     app.emit("launch-status", "Launching").unwrap();
 
-    feature_state.inner().launch(&version, &account).await?;
+    feature_state
+        .inner()
+        .launch(&state, &version, &account)
+        .await?;
 
     launch(&config, Some(&emitter))
         .await
@@ -136,7 +139,7 @@ pub async fn launch_game(
 
     feature_state
         .inner()
-        .after_launch(&version, &account)
+        .after_launch(&state, &version, &account)
         .await?;
 
     app.emit("is-launching", "false").unwrap();

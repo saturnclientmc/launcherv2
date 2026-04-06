@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 
 use lyceris::auth::microsoft::MinecraftAccount;
+use tauri::State;
 
-use crate::{features::Feature, GameVersion};
+use crate::{features::Feature, GameVersion, SharedState};
 
 pub struct InstanceSync {}
 
@@ -15,6 +16,7 @@ impl Default for InstanceSync {
 impl Feature for InstanceSync {
     fn launch(
         &mut self,
+        state: &State<'_, SharedState>,
         version: &GameVersion,
         account: &MinecraftAccount,
     ) -> super::FeatureResult {
@@ -25,6 +27,7 @@ impl Feature for InstanceSync {
 
     fn after_launch(
         &mut self,
+        state: &State<'_, SharedState>,
         version: &GameVersion,
         account: &MinecraftAccount,
     ) -> super::FeatureResult {
