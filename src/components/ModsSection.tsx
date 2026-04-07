@@ -22,6 +22,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { GameVersion, Mod } from "@/lib/types";
 import { versions } from "@/lib/launcher";
 import toast from "react-hot-toast";
+import { useRef } from "react";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -44,18 +45,21 @@ const ModsSection: React.FC<ModsSectionProps> = ({ version }) => {
     string[]
   >([]);
 
+  const requestIdRef = useRef(0);
+
   const loadMods = async () => {
+    const requestId = ++requestIdRef.current;
+
     if (activeTab === "installed") {
       const m = await getInstalledMods(version.id);
-      setMods(m);
-      if (activeTab === "installed") {
-        // Fix: If discover mods takes too long and the user switches tabs it glitches
+
+      if (requestId === requestIdRef.current) {
         setMods(m);
       }
     } else {
       const m = await discoverMods(searchQuery);
-      if (activeTab === "discover") {
-        // Fix: If discover mods takes too long and the user switches tabs it glitches
+
+      if (requestId === requestIdRef.current) {
         setMods(m);
       }
     }
