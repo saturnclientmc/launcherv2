@@ -53,7 +53,7 @@ impl Default for AppState {
                 max_memory: 2048,
                 features: FeatureSettings::default(),
             },
-            version: String::from("1.21.6"),
+            version: String::from("1.21.11"),
         }
     }
 }
