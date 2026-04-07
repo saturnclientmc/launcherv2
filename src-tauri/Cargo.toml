@@ -1,6 +1,6 @@
 [package]
 name = "saturn-launcher"
-version = "0.1.1"
+version = "0.1.3"
 description = "A minecraft launcher for Saturn Client"
 authors = ["SaturnClient"]
 edition = "2021"
