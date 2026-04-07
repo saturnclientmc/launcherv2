@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "saturn-launcher",
+  "productName": "Saturn Launcher",
   "version": "0.1.3",
   "identifier": "org.saturnclient.saturn-launcher",
   "build": {
