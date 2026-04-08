@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag to upload to (e.g. v0.1.4)"
+        description: "Release tag to upload to (e.g. 0.1.0)"
         required: false
         type: string
 
@@ -63,35 +63,18 @@ jobs:
           ditto -c -k --keepParent "$APP_PATH" "$APP_NAME-macos.zip"
 
       # --- Get release Tag ---
-      - name: Get release tag (Unix)
-        if: matrix.os != 'windows-latest'
+      - name: Get release tag
         id: get_tag
         shell: bash
         run: |
+          TAG="${{ inputs.tag }}"
           if [ "${{ github.event_name }}" = "release" ]; then
-            echo "tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
-          elif [ -n "${{ inputs.tag }}" ]; then
-            echo "tag=${{ inputs.tag }}" >> $GITHUB_OUTPUT
-          else
+            TAG="${{ github.event.release.tag_name }}"
+          elif [ -z "$TAG" ]; then
             TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
-            echo "tag=$TAG" >> $GITHUB_OUTPUT
           fi
 
-      - name: Get release tag (Windows)
-        if: matrix.os == 'windows-latest'
-        id: get_tag
-        shell: pwsh
-        run: |
-          if ("${{ github.event_name }}" -eq "release") {
-            "tag=${{ github.event.release.tag_name }}" | Out-File -Append -FilePath $env:GITHUB_OUTPUT
-          }
-          elseif ("${{ inputs.tag }}" -ne "") {
-            "tag=${{ inputs.tag }}" | Out-File -Append -FilePath $env:GITHUB_OUTPUT
-          }
-          else {
-            $TAG = git describe --tags (git rev-list --tags --max-count=1)
-            "tag=$TAG" | Out-File -Append -FilePath $env:GITHUB_OUTPUT
-          }
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
 
       # --- Upload to release ---
       - name: Upload to GitHub Release
