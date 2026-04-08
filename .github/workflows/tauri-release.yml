@@ -4,6 +4,11 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to upload to (e.g. v0.1.4)"
+        required: false
+        type: string
 
 jobs:
   build:
@@ -57,11 +62,25 @@ jobs:
 
           ditto -c -k --keepParent "$APP_PATH" "$APP_NAME-macos.zip"
 
+      # --- Determine tag ---
+      - name: Get release tag
+        id: get_tag
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            echo "tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          elif [ -n "${{ inputs.tag }}" ]; then
+            echo "tag=${{ inputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            # fallback: latest tag
+            TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
+          fi
+
+      # --- Upload to release ---
       - name: Upload to GitHub Release
-        if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.release.tag_name }}
+          tag_name: ${{ steps.get_tag.outputs.tag }}
           files: |
             src-tauri/target/release/bundle/**/*.AppImage
             src-tauri/target/release/bundle/**/*.dmg
